@@ -98,10 +98,38 @@
       when: chrony_st.changed
 
     - name: start and enable the chrony service
-      systemd:
+      ansible.builtin.systemd:
         name: "{{ chrony_service }}"
         enabled: yes
         state: started
         masked: no
         daemon_reload: yes
       when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+    - name: download and extract Cockroach DB executable
+      ansible.builtin.unarchive:
+        src: "{{ vars.crdb_url }}"
+        dest: /opt/
+        remote_src: yes
+
+    - name: get cockroach version
+      ansible.builtin.set_fact:
+        crdb_version: "{{ ((vars.crdb_url | basename) | splitext)[0] }}"
+
+    - name: print cockroach Version
+      ansible.builtin.debug:
+        var: crdb_version
+
+    - name: create cockroach folder symlink
+      file:
+        src: /opt/{{ crdb_version }}
+        dest: /opt/cockroach-current
+        state: link
+      register: folder_symlink
+
+    - name: create cockroach binary symlink
+      file:
+        src: /opt/cockroach-current/cockroach
+        dest: "{{ crdb_executable }}"
+        state: link
+
