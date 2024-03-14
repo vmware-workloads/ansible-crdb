@@ -66,8 +66,12 @@
         block: |
           *              soft     nofile          65536
           *              hard     nofile          65536
-      notify:
-        - reboot_machine
+      register: limits_conf_st
+
+    - name: rebooting machine
+      ansible.builtin.reboot:
+        reboot_timeout: 300
+      when: limits_conf_st.changed
 
     - name: install chrony (ubuntu/debian)
       ansible.builtin.yum:
