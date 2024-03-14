@@ -36,6 +36,7 @@
     - "os_family"
     - "all_ipv4_addresses"
     - "all_ipv6_addresses"
+    - "system"
   any_errors_fatal: true
   vars:
     # use_hosts_file: True
