@@ -42,11 +42,79 @@
     dest: "{{ crdb_executable }}"
     state: link
 
-- ansible.builtin.debug:
-    var: hostvars
-
 - name: generate hosts file
   ansible.builtin.include_tasks: hosts_file.yml
   when: (use_hosts_file | default(os_create_hosts_file) | bool)
 
+- name: configure firewall (ufw)
+  community.general.ufw:
+    rule: allow
+    proto: tcp
+    src: '{{ item }}'
+  loop:
+    - "{ crdb_management_port }"
+    - "{ crdb_db_port }"
+  when: ansible_os_family == 'Debian'
 
+- name: configure firewall (firewalld)
+  ansible.posix.firewalld:
+    port: "{{ item ~ '/tcp' }}"
+    permanent: yes
+    immediate: yes
+    state: enabled
+  loop:
+    - "{ crdb_management_port }"
+    - "{ crdb_db_port }"
+  when: ansible_os_family == 'RedHat'
+
+- name: create cockroachdb.service
+  ansible.builtin.template:
+    src: "{{ crdb_service_template }}"
+    dest: "/lib/systemd/system/{{ crdb_service }}.service"
+    mode: 0644
+  register: cockroach_systemd_service
+
+- name: start and enable the first bootstrap server
+  ansible.builtin.systemd:
+    name: "{{ crdb_service }}"
+    enabled: yes
+    state: started
+    masked: no
+  when: inventory_hostname == play_hosts[0]
+  register: bootstrap_node_st
+
+- name: start and enable the remaining bootstrap servers
+  ansible.builtin.systemd:
+    name: "{{ crdb_service }}"
+    enabled: yes
+    state: started
+    masked: no
+  when: inventory_hostname in play_hosts[1:3]
+  register: other_bootstrap_nodes_st
+
+- name: start and enable the remaining bootstrap servers
+  systemd:
+    name: "{{ crdb_service }}"
+    enabled: yes
+    state: started
+    masked: no
+  when: inventory_hostname in play_hosts[1:3]
+  register: other_nodes_st
+
+- name: restart servers if cockroach versions changed
+  systemd:
+    name: "{{ crdb_service }}"
+    state: restarted
+  when:
+    - (((first_bootstrap is success) or (other_bootstrap is success) or (non_bootstrap is success)) and (folder_symlink is changed)) or (cockroach_systemd_service is changed)
+
+- name: check if the database is initialized
+  shell: "{{ crdb_executable }} sql --insecure --host {{play_hosts[0]}} --execute 'select 1'"
+  register: running_st
+  changed_when: false
+  failed_when: running_st.rc != 1 and running_st.rc != 0
+  when: inventory_hostname == play_hosts[0]
+
+- name: initialize the database
+  shell: "{{ crdb_executable }} init --insecure --host {{ play_hosts[0] }}"
+  when: (inventory_hostname == play_hosts[0]) and (running_st.rc != 0)

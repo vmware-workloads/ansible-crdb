@@ -23,6 +23,7 @@
   roles:
     - ansible_role_kernel_update
     - ansible_role_chrony
+    - ansible_role_mount_disks
 
 
 - name: Deploy CockroachDB
@@ -33,7 +34,7 @@
   #  - "distribution_release"
   #  - "distribution_major_version"
   #  - "distribution_version"
-  ##  - "os_family"
+  #  - "os_family"
   #  - "all_ipv4_addresses"
   #  - "all_ipv6_addresses"
   #  - "system"
