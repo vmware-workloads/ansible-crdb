@@ -22,8 +22,10 @@
     var: mounted_disks
     verbosity: 2
 
+
+
 - name: partition disks
-  community.general.parted:
+  parted:
     device: "{{ item }}"
     number: 1
     state: present
