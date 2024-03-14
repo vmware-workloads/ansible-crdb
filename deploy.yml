@@ -1,0 +1,76 @@
+---
+- name: Wait for systems to boot up
+  hosts: all
+  gather_facts: no
+  any_errors_fatal: true
+  tasks:
+    - name: Wait up to 300 seconds
+      wait_for_connection:
+        delay: 3
+        sleep: 5
+        timeout: 300
+
+- name: OS updates
+  hosts: all
+  gather_facts: no
+  any_errors_fatal: true
+  tasks:
+    - name: update kernel for vmw_ptp support
+      ansible.builtin.apt:
+        name:
+          - linux-image-generic-hwe-22.04
+      notify:
+        - reboot_machine
+      when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+    - name: flush handler immediately
+      ansible.builtin.meta: flush_handlers
+
+    - name: validate ptp0 exist
+      ansible.builtin.stat:
+        path: "{{ ptp_device }}"
+      register: stat_output
+
+    - name: Fail if the ptp device does not exist
+      ansible.builtin.fail:
+        msg: "PTP device does not exist: {{ ptp_device }"
+      when: not stat_output.stat.exists
+
+- name: Deploy CockroachDB
+  hosts: all
+  tasks:
+    - name: configure limits.conf
+      ansible.builtin.blockinfile:
+        path: /etc/security/limits.conf
+        insertafter: EOF
+        block: |
+          *              soft     nofile          65536
+          *              hard     nofile          65536
+      notify:
+        - reboot_machine
+
+    - name: install chrony (ubuntu/debian)
+      ansible.builtin.yum:
+        name:
+          - chrony
+      when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+    - name: create chrony configuration
+      template:
+        src: "{{ chrony_conf_template }}"
+        dest: "{{ chrony_conf_file }}"
+        owner: root
+        group: root
+        mode: 0644
+      notify:
+        - restart_chrony
+      when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+    - name: start and enable the chrony service
+      systemd:
+        name: "{{ chrony_service }}"
+        enabled: yes
+        state: started
+        masked: no
+        daemon_reload: yes
+      when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
