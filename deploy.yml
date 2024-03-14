@@ -38,22 +38,23 @@
       ansible.builtin.apt:
         name:
           - linux-image-generic-hwe-22.04
-      notify:
-        - reboot_machine
+      register: kernel_st
       when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
 
-    - name: flush handler immediately
-      ansible.builtin.meta: flush_handlers
+    - name: rebooting machine
+      ansible.builtin.reboot:
+        reboot_timeout: 300
+      when: kernel_st.changed
 
     - name: validate ptp0 exist
       ansible.builtin.stat:
         path: "{{ ptp_device }}"
-      register: stat_output
+      register: stat_st
 
     - name: Fail if the ptp device does not exist
       ansible.builtin.fail:
         msg: "PTP device does not exist: {{ ptp_device }"
-      when: not stat_output.stat.exists
+      when: not stat_st.stat.exists
 
 - name: Deploy CockroachDB
   hosts: all
@@ -81,9 +82,16 @@
         owner: root
         group: root
         mode: 0644
-      notify:
-        - restart_chrony
+      register: chrony_st
       when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+    - name: restart_chrony
+      ansible.builtin.systemd:
+        name: "{{ chrony_service }}"
+        enabled: yes
+        state: restarted
+        masked: no
+      when: chrony_st.changed
 
     - name: start and enable the chrony service
       systemd:
