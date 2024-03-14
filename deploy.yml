@@ -74,13 +74,13 @@
       when: limits_conf_st.changed
 
     - name: install chrony (ubuntu/debian)
-      ansible.builtin.yum:
+      ansible.builtin.apt:
         name:
           - chrony
       when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
 
     - name: create chrony configuration
-      template:
+      ansible.builtin.template:
         src: "{{ chrony_conf_template }}"
         dest: "{{ chrony_conf_file }}"
         owner: root
@@ -89,7 +89,7 @@
       register: chrony_st
       when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
 
-    - name: restart_chrony
+    - name: restart chrony
       ansible.builtin.systemd:
         name: "{{ chrony_service }}"
         enabled: yes
