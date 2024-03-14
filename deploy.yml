@@ -14,7 +14,8 @@
   hosts: all
   gather_facts: no
   any_errors_fatal: true
-  become: yes
+  become: true
+  become_method: sudo
   tasks:
     - name: Filter and return only selected facts
       ansible.builtin.setup:
