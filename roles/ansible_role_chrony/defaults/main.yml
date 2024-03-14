@@ -1,0 +1,2 @@
+# Default path for the PTP clock
+ptp_device: /dev/ptp0

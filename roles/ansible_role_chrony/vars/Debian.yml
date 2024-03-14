@@ -1,5 +1,8 @@
----
+# Chronyd systemd service name
 chrony_service: chronyd
+
+# Chronyd Configuration file path
 chrony_conf_file: /etc/chrony/chrony.conf
+
+# Chronyd configuration template
 chrony_conf_template: chrony.conf.j2
-ptp_device: /dev/ptp0

@@ -1,0 +1,32 @@
+- name: install chrony (ubuntu/debian)
+  ansible.builtin.apt:
+    name:
+      - chrony
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+- name: create chrony configuration
+  ansible.builtin.template:
+    src: "{{ chrony_conf_template }}"
+    dest: "{{ chrony_conf_file }}"
+    owner: root
+    group: root
+    mode: 0644
+  register: chrony_st
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+- name: restart chrony
+  ansible.builtin.systemd:
+    name: "{{ chrony_service }}"
+    enabled: yes
+    state: restarted
+    masked: no
+  when: chrony_st.changed
+
+- name: start and enable the chrony service
+  ansible.builtin.systemd:
+    name: "{{ chrony_service }}"
+    enabled: yes
+    state: started
+    masked: no
+    daemon_reload: yes
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
