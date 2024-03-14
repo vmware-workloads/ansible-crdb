@@ -30,14 +30,14 @@
     var: crdb_version
 
 - name: create cockroach folder symlink
-  file:
+  ansible.builtin.file:
     src: "/opt/{{ crdb_version }}"
     dest: "{{ crdb_folder }}"
     state: link
   register: folder_symlink
 
 - name: create cockroach binary symlink
-  file:
+  ansible.builtin.file:
     src: "{{ crdb_folder }}/cockroach"
     dest: "{{ crdb_executable }}"
     state: link
@@ -46,7 +46,7 @@
     var: hostvars
 
 - name: generate hosts file
-  include: hosts_file.yml
+  ansible.builtin.include_tasks: hosts_file.yml
   when: (use_hosts_file | default(os_create_hosts_file) | bool)
 
 

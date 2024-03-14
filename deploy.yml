@@ -34,6 +34,8 @@
     - "distribution_major_version"
     - "distribution_version"
     - "os_family"
+    - "all_ipv4_addresses"
+    - "all_ipv6_addresses"
   any_errors_fatal: true
   vars:
     # use_hosts_file: True
