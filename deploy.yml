@@ -27,47 +27,15 @@
 
 - name: Deploy CockroachDB
   hosts: all
-  tasks:
-    - name: configure limits.conf
-      ansible.builtin.blockinfile:
-        path: /etc/security/limits.conf
-        insertafter: EOF
-        block: |
-          *              soft     nofile          65536
-          *              hard     nofile          65536
-      register: limits_conf_st
+  gather_facts: true
+  gather_subset:
+    - "distribution"
+    - "distribution_release"
+    - "distribution_major_version"
+    - "distribution_version"
+    - "os_family"
+  any_errors_fatal: true
+  roles:
+    - ansible_role_crdb
 
-    - name: rebooting machine
-      ansible.builtin.reboot:
-        reboot_timeout: 300
-      when: limits_conf_st.changed
-
-
-
-    - name: download and extract Cockroach DB executable
-      ansible.builtin.unarchive:
-        src: "{{ crdb_url }}"
-        dest: /opt/
-        remote_src: yes
-
-    - name: get cockroach version
-      ansible.builtin.set_fact:
-        crdb_version: "{{ ((crdb_url | basename) | splitext)[0] }}"
-
-    - name: print cockroach Version
-      ansible.builtin.debug:
-        var: crdb_version
-
-    - name: create cockroach folder symlink
-      file:
-        src: /opt/{{ crdb_version }}
-        dest: /opt/cockroach-current
-        state: link
-      register: folder_symlink
-
-    - name: create cockroach binary symlink
-      file:
-        src: /opt/cockroach-current/cockroach
-        dest: "{{ crdb_executable }}"
-        state: link
 
