@@ -31,14 +31,14 @@
 
 - name: create cockroach folder symlink
   file:
-    src: /opt/{{ crdb_version }}
+    src: "/opt/{{ crdb_version }}"
     dest: "{{ crdb_folder }}"
     state: link
   register: folder_symlink
 
 - name: create cockroach binary symlink
   file:
-    src: "{{ crdb_folder }}"/cockroach
+    src: "{{ crdb_folder }}/cockroach"
     dest: "{{ crdb_executable }}"
     state: link
 
