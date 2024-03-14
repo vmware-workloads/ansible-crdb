@@ -35,6 +35,8 @@
     - "distribution_version"
     - "os_family"
   any_errors_fatal: true
+  vars:
+    # use_hosts_file: True
   roles:
     - ansible_role_crdb
 

@@ -1,3 +1,6 @@
+- name: include OS specific variables.
+  include_vars: "{{ ansible_os_family }}.yml"
+
 - name: configure limits.conf
   ansible.builtin.blockinfile:
     path: /etc/security/limits.conf
@@ -18,23 +21,29 @@
     dest: /opt/
     remote_src: yes
 
-- name: get cockroach version
+- name: extract cockroach version
   ansible.builtin.set_fact:
     crdb_version: "{{ ((crdb_url | basename) | splitext)[0] }}"
 
-- name: print cockroach Version
+- name: print cockroach version
   ansible.builtin.debug:
     var: crdb_version
 
 - name: create cockroach folder symlink
   file:
     src: /opt/{{ crdb_version }}
-    dest: /opt/cockroach-current
+    dest: "{{ crdb_folder }}"
     state: link
   register: folder_symlink
 
 - name: create cockroach binary symlink
   file:
-    src: /opt/cockroach-current/cockroach
+    src: "{{ crdb_folder }}"/cockroach
     dest: "{{ crdb_executable }}"
     state: link
+
+- name: generate hosts file
+  include: hosts_file.yml
+  when: (use_hosts_file | default(os_create_hosts_file) | bool)
+
+
