@@ -15,6 +15,12 @@
   gather_facts: no
   any_errors_fatal: true
   tasks:
+    - name: Filter and return only selected facts
+      ansible.builtin.setup:
+        filter:
+          - 'ansible_distribution'
+          - 'ansible_distribution_version'
+
     - name: update kernel for vmw_ptp support
       ansible.builtin.apt:
         name:
