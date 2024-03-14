@@ -42,6 +42,9 @@
     dest: "{{ crdb_executable }}"
     state: link
 
+- ansible.builtin.debug:
+    var: hostvars
+
 - name: generate hosts file
   include: hosts_file.yml
   when: (use_hosts_file | default(os_create_hosts_file) | bool)
