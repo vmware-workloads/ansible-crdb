@@ -108,13 +108,13 @@
 
     - name: download and extract Cockroach DB executable
       ansible.builtin.unarchive:
-        src: "{{ vars.crdb_url }}"
+        src: "{{ crdb_url }}"
         dest: /opt/
         remote_src: yes
 
     - name: get cockroach version
       ansible.builtin.set_fact:
-        crdb_version: "{{ ((vars.crdb_url | basename) | splitext)[0] }}"
+        crdb_version: "{{ ((crdb_url | basename) | splitext)[0] }}"
 
     - name: print cockroach Version
       ansible.builtin.debug:
