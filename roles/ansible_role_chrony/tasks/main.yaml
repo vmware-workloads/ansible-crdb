@@ -12,9 +12,9 @@
   when: not stat_st.stat.exists
 
 - name: install and configure chrony (Debian/Ubuntu)
-  include: debian.yml
+  ansible.builtin.include_tasks: debian.yml
   when: ansible_os_family == 'Debian'
 
 - name: install and configure chrony (RedHat/CentOS)
-  include: redhat.yml
+  ansible.builtin.include_tasks: redhat.yml
   when: ansible_os_family == 'RedHat'

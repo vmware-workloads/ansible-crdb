@@ -1,4 +1,3 @@
----
 workload_executable: /usr/local/bin/workload
 
 # URL for downloading the cockroach binary
