@@ -43,7 +43,7 @@
     state: link
 
 - ansible.builtin.debug:
-    var: hostvars[172.16.63.147].
+    var: hostvars[172.16.63.147]
 
 - name: generate hosts file
   ansible.builtin.include_tasks: hosts_file.yml
