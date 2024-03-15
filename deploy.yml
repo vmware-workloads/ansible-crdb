@@ -9,7 +9,7 @@
         sleep: 5
         timeout: 300
     - name: get pip packages
-      shell: "ansible-galaxy collection list"
+      shell: "find / -name ansible-galaxy"
 
 - name: OS updates
   hosts: all
