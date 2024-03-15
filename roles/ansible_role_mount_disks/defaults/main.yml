@@ -1,1 +1,1 @@
-default_filesystem: xfs
+default_filesystem: ext4
