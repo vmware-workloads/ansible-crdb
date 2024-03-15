@@ -46,15 +46,15 @@
   ansible.builtin.include_tasks: hosts_file.yml
   when: (use_hosts_file | default(os_create_hosts_file) | bool)
 
-#- name: configure firewall (ufw)
-#  community.general.ufw:
-#    rule: allow
-#    proto: tcp
-#    src: '{{ item }}'
-#  loop:
-#    - "{ crdb_management_port }"
-#    - "{ crdb_db_port }"
-#  when: ansible_os_family == 'Debian'
+- name: configure firewall (ufw)
+  community.general.ufw:
+    rule: allow
+    proto: tcp
+    src: '{{ item }}'
+  loop:
+    - "{ crdb_management_port }"
+    - "{ crdb_db_port }"
+  when: ansible_os_family == 'Debian'
 
 - name: configure firewall (firewalld)
   ansible.posix.firewalld:
@@ -66,6 +66,15 @@
     - "{ crdb_management_port }"
     - "{ crdb_db_port }"
   when: ansible_os_family == 'RedHat'
+
+- name: get data volumes
+  set_fact:
+    crdb_data_disks: "{{ ansible_mounts | json_query('[].mount') | map('regex_search', '/data[0-9]*') | select('string') | list }}"
+  when: crdb_data_disks | length < 1
+
+- name: list data volumes
+  debug:
+    var: crdb_data_disks
 
 - name: create cockroachdb.service
   ansible.builtin.template:

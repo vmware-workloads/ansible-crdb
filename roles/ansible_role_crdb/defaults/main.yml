@@ -22,6 +22,9 @@ crdb_rack_count: 1
 # value: 'any', 'local', 'off'
 crdb_remote_debugging_mode: 'off'
 
+# List of data disks (e.g. ['/data0', '/data1']
+crdb_data_disks: []
+
 # CRDB executable installation path
 crdb_folder: /opt/cockroach
 crdb_executable: /usr/local/bin/cockroach

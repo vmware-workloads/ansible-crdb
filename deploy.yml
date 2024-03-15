@@ -43,4 +43,4 @@
   vars:
     # use_hosts_file: True
   roles:
-    #- ansible_role_crdb
+    - ansible_role_crdb
