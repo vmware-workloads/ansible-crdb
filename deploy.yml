@@ -9,7 +9,7 @@
         sleep: 5
         timeout: 300
     - name: get pip packages
-      shell: "pip list"
+      shell: "/usr/bin/python3 -c 'help(\"modules\")'"
 
 - name: OS updates
   hosts: all
