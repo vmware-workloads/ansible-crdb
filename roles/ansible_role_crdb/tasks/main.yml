@@ -46,15 +46,15 @@
   ansible.builtin.include_tasks: hosts_file.yml
   when: (use_hosts_file | default(os_create_hosts_file) | bool)
 
-- name: configure firewall (ufw)
-  community.general.ufw:
-    rule: allow
-    proto: tcp
-    src: '{{ item }}'
-  loop:
-    - "{ crdb_management_port }"
-    - "{ crdb_db_port }"
-  when: ansible_os_family == 'Debian'
+#- name: configure firewall (ufw)
+#  community.general.ufw:
+#    rule: allow
+#    proto: tcp
+#    src: '{{ item }}'
+#  loop:
+#    - "{ crdb_management_port }"
+#    - "{ crdb_db_port }"
+#  when: ansible_os_family == 'Debian'
 
 - name: configure firewall (firewalld)
   ansible.posix.firewalld:
