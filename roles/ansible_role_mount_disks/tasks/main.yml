@@ -11,7 +11,6 @@
 - name: list disks
   ansible.builtin.debug:
     var: disks
-    verbosity: 2
 
 - name: get mounted devices
   set_fact:
@@ -20,7 +19,6 @@
 - name: list mounted disks
   ansible.builtin.debug:
     var: mounted_disks
-    verbosity: 2
 
 - name: partition disks
   community.general.parted:
