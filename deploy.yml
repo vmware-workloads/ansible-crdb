@@ -44,5 +44,3 @@
     # use_hosts_file: True
   roles:
     - ansible_role_crdb
-
-
