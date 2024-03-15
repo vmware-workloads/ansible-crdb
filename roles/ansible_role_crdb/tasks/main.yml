@@ -50,7 +50,7 @@
   community.general.ufw:
     rule: allow
     proto: tcp
-    src: '{{ item }}'
+    port: '{{ item }}'
   loop:
     - "{{ crdb_management_port }}"
     - "{{ crdb_db_port }}"
