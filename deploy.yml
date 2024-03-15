@@ -8,8 +8,6 @@
         delay: 3
         sleep: 5
         timeout: 300
-    - name: get pip packages
-      shell: "find / -name ansible-galaxy"
 
 - name: OS updates
   hosts: all
