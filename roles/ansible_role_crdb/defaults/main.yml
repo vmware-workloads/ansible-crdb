@@ -35,6 +35,9 @@ crdb_ssl: False
 crdb_ssl_mode_disable: disable
 crdb_ssl_mode_secure: verify-full&sslrootcert=/root/certs/ca.crt&sslcert=/root/certs/client.root.crt&sslkey=/root/certs/client.root.key
 
+# CRDB systemd service name
+crdb_service: cockroachdb
+
 # Template for systemd service
 crdb_service_template: cockroachdb.service.j2
 
