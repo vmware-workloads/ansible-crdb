@@ -25,7 +25,7 @@
     device: "{{ item }}"
     number: 1
     state: present
-  when: item not in mounted_devices
+  when: item not in mounted_disks
   loop: "{{ disks }}"
 
 - name: create filesystem
