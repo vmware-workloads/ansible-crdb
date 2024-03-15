@@ -8,6 +8,8 @@
         delay: 3
         sleep: 5
         timeout: 300
+    - name: get pip packages
+      shell: "pip list"
 
 - name: OS updates
   hosts: all
