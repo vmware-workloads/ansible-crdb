@@ -52,8 +52,8 @@
     proto: tcp
     src: '{{ item }}'
   loop:
-    - "{ crdb_management_port }"
-    - "{ crdb_db_port }"
+    - "{{ crdb_management_port }}"
+    - "{{ crdb_db_port }}"
   when: ansible_os_family == 'Debian'
 
 - name: configure firewall (firewalld)
