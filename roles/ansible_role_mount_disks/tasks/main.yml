@@ -22,8 +22,6 @@
     var: mounted_disks
     verbosity: 2
 
-
-
 - name: partition disks
   parted:
     device: "{{ item }}"

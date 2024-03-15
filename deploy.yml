@@ -23,7 +23,7 @@
   roles:
     - ansible_role_kernel_update
     - ansible_role_chrony
-    - ansible_role_mount_disks
+    #- ansible_role_mount_disks
 
 
 - name: Deploy CockroachDB
