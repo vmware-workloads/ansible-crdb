@@ -76,6 +76,14 @@
   debug:
     var: crdb_data_disks
 
+- name: create bootstrap server list
+  set_fact:
+    bootstrap: "{{ play_hosts[:3] }}"
+
+- name: bootstrap servers
+  debug:
+    var: bootstrap
+
 - name: create cockroachdb.service
   ansible.builtin.template:
     src: "{{ crdb_service_template }}"
