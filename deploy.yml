@@ -26,9 +26,9 @@
     - ansible_role_mount_disks
 
 
-- name: Deploy CockroachDB
-  hosts: all
-  gather_facts: true
+#- name: Deploy CockroachDB
+#  hosts: all
+#  gather_facts: true
   #gather_subset:
   #  - "distribution"
   #  - "distribution_release"
@@ -39,8 +39,8 @@
   #  - "all_ipv6_addresses"
   #  - "system"
   #  - ""
-  any_errors_fatal: true
-  vars:
+#  any_errors_fatal: true
+#  vars:
     # use_hosts_file: True
-  roles:
-    - ansible_role_crdb
+#  roles:
+#    - ansible_role_crdb
