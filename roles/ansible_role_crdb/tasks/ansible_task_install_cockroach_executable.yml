@@ -20,6 +20,7 @@
 
 - name: copy executable
   ansible.builtin.copy:
+    remote_src: yes
     src: "{{ tmp_folder }}/{{ crdb_version }}/cockroach"
     dest: "{{ cockroach_folder }}"
 
@@ -31,6 +32,7 @@
 
 - name: copy cockroach geos libraries
   ansible.builtin.copy:
+    remote_src: yes
     src: "{{ tmp_folder }}/{{ crdb_version }}/lib/{{ item }}"
     dest: "{{ cockroach_library_folder }}"
   with_items:
