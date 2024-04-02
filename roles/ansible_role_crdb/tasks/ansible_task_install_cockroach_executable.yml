@@ -1,7 +1,13 @@
+- name: set variables
+  ansible.builtin.set_fact:
+    tmp_folder: /tmp
+    cockroach_folder: /usr/local/bin
+    cockroach_library_folder: /usr/local/lib/cockroach
+
 - name: download and extract Cockroach DB executable
   ansible.builtin.unarchive:
     src: "{{ crdb_url }}"
-    dest: /tmp/
+    dest: "{{ tmp_folder }}"
     remote_src: yes
 
 - name: extract cockroach version
@@ -14,16 +20,19 @@
 
 - name: copy executable
   ansible.builtin.copy:
-    src:
-- name: create cockroach folder symlink
-  ansible.builtin.file:
-    src: "/opt/{{ crdb_version }}"
-    dest: "{{ crdb_folder }}"
-    state: link
-  register: folder_symlink
+    src: "{{ tmp_folder }}/{{ crdb_version }}/cockroach"
+    dest: "{{ cockroach_folder }}"
 
-- name: create cockroach binary symlink
+- name: create cockroach library directory
   ansible.builtin.file:
-    src: "{{ crdb_folder }}/cockroach"
-    dest: "{{ crdb_executable }}"
-    state: link
+    path: "{{ cockroach_library_folder }}"
+    state: directory
+    mode: '0644'
+
+- name: copy cockroach geos libraries
+  ansible.builtin.copy:
+    src: "{{ tmp_folder }}/{{ crdb_version }}/lib/{{ item }}"
+    dest: "{{ cockroach_library_folder }}"
+  with_items:
+    - libgeos.so
+    - libgeos_c.so
