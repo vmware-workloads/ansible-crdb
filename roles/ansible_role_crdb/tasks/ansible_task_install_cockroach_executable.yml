@@ -1,0 +1,29 @@
+- name: download and extract Cockroach DB executable
+  ansible.builtin.unarchive:
+    src: "{{ crdb_url }}"
+    dest: /tmp/
+    remote_src: yes
+
+- name: extract cockroach version
+  ansible.builtin.set_fact:
+    crdb_version: "{{ ((crdb_url | basename) | splitext)[0] }}"
+
+- name: print cockroach version
+  ansible.builtin.debug:
+    var: crdb_version
+
+- name: copy executable
+  ansible.builtin.copy:
+    src:
+- name: create cockroach folder symlink
+  ansible.builtin.file:
+    src: "/opt/{{ crdb_version }}"
+    dest: "{{ crdb_folder }}"
+    state: link
+  register: folder_symlink
+
+- name: create cockroach binary symlink
+  ansible.builtin.file:
+    src: "{{ crdb_folder }}/cockroach"
+    dest: "{{ crdb_executable }}"
+    state: link

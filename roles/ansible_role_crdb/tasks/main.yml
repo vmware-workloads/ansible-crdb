@@ -1,137 +1,84 @@
 - name: include OS specific variables.
   include_vars: "{{ ansible_os_family }}.yml"
 
-- name: configure limits.conf
-  ansible.builtin.blockinfile:
-    path: /etc/security/limits.conf
-    insertafter: EOF
-    block: |
-      *              soft     nofile          65536
-      *              hard     nofile          65536
-  register: limits_conf_st
+- name: configure os parameters
+  ansible.builtin.include_tasks: ansible_task_configure_os.yml
 
-- name: rebooting machine
-  ansible.builtin.reboot:
-    reboot_timeout: 300
-  when: limits_conf_st.changed
+- name: install cockroach executable
+  ansible.builtin.include_tasks: ansible_task_install_cockroach_executable.yml
 
-- name: download and extract Cockroach DB executable
-  ansible.builtin.unarchive:
-    src: "{{ crdb_url }}"
-    dest: /opt/
-    remote_src: yes
+#- name: generate hosts file
+#  ansible.builtin.include_tasks: ansible_task_create_hosts_file.yml
+#  when: (use_hosts_file | default(os_create_hosts_file) | bool)
 
-- name: extract cockroach version
-  ansible.builtin.set_fact:
-    crdb_version: "{{ ((crdb_url | basename) | splitext)[0] }}"
-
-- name: print cockroach version
-  ansible.builtin.debug:
-    var: crdb_version
-
-- name: create cockroach folder symlink
-  ansible.builtin.file:
-    src: "/opt/{{ crdb_version }}"
-    dest: "{{ crdb_folder }}"
-    state: link
-  register: folder_symlink
-
-- name: create cockroach binary symlink
-  ansible.builtin.file:
-    src: "{{ crdb_folder }}/cockroach"
-    dest: "{{ crdb_executable }}"
-    state: link
-
-- name: generate hosts file
-  ansible.builtin.include_tasks: hosts_file.yml
-  when: (use_hosts_file | default(os_create_hosts_file) | bool)
-
-- name: configure firewall (ufw)
-  community.general.ufw:
-    rule: allow
-    proto: tcp
-    port: '{{ item }}'
-  loop:
-    - "{{ crdb_management_port }}"
-    - "{{ crdb_db_port }}"
-  when: ansible_os_family == 'Debian'
-
-- name: configure firewall (firewalld)
-  ansible.posix.firewalld:
-    port: "{{ item ~ '/tcp' }}"
-    permanent: yes
-    immediate: yes
-    state: enabled
-  loop:
-    - "{ crdb_management_port }"
-    - "{ crdb_db_port }"
-  when: ansible_os_family == 'RedHat'
-
-- name: get data volumes
-  set_fact:
-    crdb_data_disks: "{{ ansible_mounts | json_query('[].mount') | map('regex_search', '/data[0-9]*') | select('string') | list }}"
-  when: crdb_data_disks | length < 1
-
-- name: list data volumes
-  debug:
-    var: crdb_data_disks
-
-- name: create bootstrap server list
-  set_fact:
-    bootstrap: "{{ play_hosts[:3] }}"
-
-- name: bootstrap servers
-  debug:
-    var: bootstrap
-
-- name: create cockroachdb.service
-  ansible.builtin.template:
-    src: "{{ crdb_service_template }}"
-    dest: "/lib/systemd/system/{{ crdb_service }}.service"
-    mode: 0644
-  register: cockroach_systemd_service
-
-- name: start and enable the first bootstrap server
-  ansible.builtin.systemd:
-    name: "{{ crdb_service }}"
-    enabled: yes
-    state: started
-    masked: no
-  when: inventory_hostname == play_hosts[0]
-  register: bootstrap_node_st
-
-- name: start and enable the remaining bootstrap servers
-  ansible.builtin.systemd:
-    name: "{{ crdb_service }}"
-    enabled: yes
-    state: started
-    masked: no
-  when: inventory_hostname in play_hosts[1:3]
-  register: other_bootstrap_nodes_st
-
-- name: start and enable the remaining bootstrap servers
-  systemd:
-    name: "{{ crdb_service }}"
-    enabled: yes
-    state: started
-    masked: no
-  when: inventory_hostname in play_hosts[1:3]
-  register: other_nodes_st
-
-- name: restart servers if cockroach versions changed
-  systemd:
-    name: "{{ crdb_service }}"
-    state: restarted
-  when:
-    - (((first_bootstrap is success) or (other_bootstrap is success) or (non_bootstrap is success)) and (folder_symlink is changed)) or (cockroach_systemd_service is changed)
-
-- name: check if the database is initialized
-  shell: "{{ crdb_executable }} sql --insecure --host {{play_hosts[0]}} --execute 'select 1'"
-  register: running_st
-  changed_when: false
-  failed_when: running_st.rc != 1 and running_st.rc != 0
-  when: inventory_hostname == play_hosts[0]
-
-- name: initialize the database
-  shell: "{{ crdb_executable }} init --insecure --host {{ play_hosts[0] }}"
-  when: (inventory_hostname == play_hosts[0]) and (running_st.rc != 0)
+#- name: configure firewall
+#  ansible.builtin.include_tasks: ansible_task_configure_firewall.yml
+#
+#- name: get data volumes
+#  set_fact:
+#    crdb_data_disks: "{{ ansible_mounts | json_query('[].mount') | map('regex_search', '/data[0-9]*') | select('string') | list }}"
+#  when: crdb_data_disks | length < 1
+#
+#- name: list data volumes
+#  debug:
+#    var: crdb_data_disks
+#
+#- name: create bootstrap server list
+#  set_fact:
+#    bootstrap: "{{ play_hosts[:3] }}"
+#
+#- name: bootstrap servers
+#  debug:
+#    var: bootstrap
+#
+#- name: create cockroachdb.service
+#  ansible.builtin.template:
+#    src: "{{ crdb_service_template }}"
+#    dest: "/lib/systemd/system/{{ crdb_service }}.service"
+#    mode: 0644
+#  register: cockroach_systemd_service
+#
+#- name: start and enable the first bootstrap server
+#  ansible.builtin.systemd:
+#    name: "{{ crdb_service }}"
+#    enabled: yes
+#    state: started
+#    masked: no
+#  when: inventory_hostname == play_hosts[0]
+#  register: bootstrap_node_st
+#
+#- name: start and enable the remaining bootstrap servers
+#  ansible.builtin.systemd:
+#    name: "{{ crdb_service }}"
+#    enabled: yes
+#    state: started
+#    masked: no
+#  when: inventory_hostname in play_hosts[1:3]
+#  register: other_bootstrap_nodes_st
+#
+#- name: start and enable the remaining bootstrap servers
+#  systemd:
+#    name: "{{ crdb_service }}"
+#    enabled: yes
+#    state: started
+#    masked: no
+#  when: inventory_hostname in play_hosts[1:3]
+#  register: other_nodes_st
+#
+#- name: restart servers if cockroach versions changed
+#  systemd:
+#    name: "{{ crdb_service }}"
+#    state: restarted
+#  when:
+#    - (((first_bootstrap is success) or (other_bootstrap is success) or (non_bootstrap is success)) and (folder_symlink is changed)) or (cockroach_systemd_service is changed)
+#
+#- name: check if the database is initialized
+#  shell: "{{ crdb_executable }} sql --insecure --host {{play_hosts[0]}} --execute 'select 1'"
+#  register: running_st
+#  changed_when: false
+#  failed_when: running_st.rc != 1 and running_st.rc != 0
+#  when: inventory_hostname == play_hosts[0]
+#
+#- name: initialize the database
+#  shell: "{{ crdb_executable }} init --insecure --host {{ play_hosts[0] }}"
+#  when: (inventory_hostname == play_hosts[0]) and (running_st.rc != 0)

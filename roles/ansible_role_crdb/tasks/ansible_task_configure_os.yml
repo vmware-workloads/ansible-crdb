@@ -1,0 +1,13 @@
+- name: configure limits.conf
+  ansible.builtin.blockinfile:
+    path: /etc/security/limits.conf
+    insertafter: EOF
+    block: |
+      *              soft     nofile          65536
+      *              hard     nofile          65536
+  register: limits_conf_st
+
+- name: rebooting machine
+  ansible.builtin.reboot:
+    reboot_timeout: 300
+  when: limits_conf_st.changed

@@ -1,0 +1,118 @@
+#
+# Ref. https://www.cockroachlabs.com/docs/stable/deploy-cockroachdb-on-premises
+#
+- name: set variables
+  ansible.builtin.fact:
+    cert_folders:
+      - certs
+      - my-safe-directory
+
+- name: print bootstrap node name
+  ansible.builtin.debug:
+    msg: "node 0: '{{ play_hosts[0] }}'"
+  when: inventory_hostname == play_hosts[0]
+
+- name: print other nodes name
+  ansible.builtin.debug:
+    msg: "nodes: '{{ play_hosts }}'"
+  when: inventory_hostname == play_hosts[0]
+
+- name: delete local certificate folder
+  local_action: file path=certificates state=absent
+
+- name: delete previous certificate folders on bootstrap node
+  file:
+    state: absent
+    path: "{{ item }}/"
+  with_items: "{{ cert_folders }}"
+  when: inventory_hostname == play_hosts[0]
+
+- name: create certificate directories on bootstrap node
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0750'
+  with_items: "{{ cert_folders }}"
+  when: inventory_hostname == play_hosts[0]
+
+- name: create node certificate folders
+  file:
+    path: "certs/{{ item }}"
+    state: directory
+    mode: '0750'
+  with_items: "{{ play_hosts }}"
+  when: inventory_hostname == play_hosts[0]
+
+- name: generate CA certificate and key
+  ansible.builtin.shell:
+    cmd: >
+      cockroach cert create-ca 
+      --certs-dir=certs 
+      --ca-key=my-safe-directory/ca.key 
+      --overwrite
+  when: inventory_hostname == play_hosts[0]
+
+- name: copy CA certificate to automation system
+  ansible.builtin.copy:
+    remote_src: true
+    src: certs/ca.crt
+    dest: "certs/{{ item }}/ca.crt"
+  with_items: "{{ play_hosts }}"
+  when: inventory_hostname == play_hosts[0]
+
+- name: generate crdb node certificates
+  ansible.builtin.shell:
+    cmd: >
+      cockroach cert create-node 
+      {{ item }}
+      {{ vars.hostvars[item]['hostname'] }}
+      localhost
+      127.0.0.1
+      {{ crdb_haproxy | join(' ') }}
+      --certs-dir=certs/{{ item }}
+      --ca-key=my-safe-directory/ca.key
+  with_items: "{{ play_hosts }}"
+  when: inventory_hostname == play_hosts[0]
+
+- name: synchronization of src on the inventory host to the dest on the localhost in pull mode
+  ansible.posix.synchronize:
+    mode: pull
+    dirs: yes
+    src: "{{ item }}"
+    dest: "certificates"
+  with_items: "{{ cert_folders }}"
+  when: inventory_hostname == bootstrap_node
+
+- name: delete remote certificates folders
+  ansible.builtin.file:
+    state: absent
+    path: "{{ item }}/"
+  with_items: "{{ cert_folders }}"
+  when: inventory_hostname == play_hosts[0]
+
+- name: create remote certificate directories
+  ansible.builtin.file:
+    path: /etc/ssl/crdb
+    state: directory
+
+- name: Copy file with owner and permissions
+  ansible.builtin.copy:
+    src:  "certificates/certs/{{ inventory_hostname }}/{{ item }}"
+    dest: /etc/ssl/crdb
+    mode: '0700'
+  with_items:
+  - ca.crt
+  - node.crt
+  - node.key
+
+- name: update systemd service
+  ansible.builtin.replace:
+    path: "/lib/systemd/system/cockroachdb.service"
+    regexp: '--insecure'
+    replace: '--certs-dir=/etc/ssl/crdb'
+
+- name: restart cockroach service
+  ansible.builtin.systemd:
+    name: cockroachdb
+    state: restarted
+    daemon_reload: yes

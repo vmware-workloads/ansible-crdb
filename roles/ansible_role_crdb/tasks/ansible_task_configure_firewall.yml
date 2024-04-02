@@ -1,0 +1,20 @@
+- name: configure firewall (ufw)
+  community.general.ufw:
+    rule: allow
+    proto: tcp
+    port: '{{ item }}'
+  loop:
+    - "{{ crdb_management_port }}"
+    - "{{ crdb_db_port }}"
+  when: ansible_os_family == 'Debian'
+
+- name: configure firewall (firewalld)
+  ansible.posix.firewalld:
+    port: "{{ item ~ '/tcp' }}"
+    permanent: yes
+    immediate: yes
+    state: enabled
+  loop:
+    - "{ crdb_management_port }"
+    - "{ crdb_db_port }"
+  when: ansible_os_family == 'RedHat'
