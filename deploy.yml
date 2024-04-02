@@ -1,5 +1,5 @@
 - name: Wait for systems to boot up
-  hosts: all
+  hosts: crdb
   gather_facts: no
   any_errors_fatal: true
   tasks:
@@ -10,7 +10,7 @@
         timeout: 300
 
 - name: OS updates
-  hosts: all
+  hosts: crdb
   gather_facts: true
   gather_subset:
     - "distribution"
@@ -27,7 +27,7 @@
 
 
 #- name: Deploy CockroachDB
-#  hosts: all
+#  hosts: crdb
 #  gather_facts: true
   #gather_subset:
   #  - "distribution"
