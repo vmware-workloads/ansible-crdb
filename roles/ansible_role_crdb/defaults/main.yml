@@ -13,6 +13,9 @@ crdb_service_group: cockroach
 # Servers should advertise IP rather than hostname
 advertise_ip: True
 
+# SSH Port
+ssh_port: 22
+
 # Cockroach DB PSQL port
 crdb_db_port: 26257
 

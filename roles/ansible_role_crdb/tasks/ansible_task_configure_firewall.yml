@@ -4,6 +4,7 @@
     proto: tcp
     port: '{{ item }}'
   loop:
+    - "{{ ssh_port }}"
     - "{{ crdb_management_port }}"
     - "{{ crdb_db_port }}"
   when: ansible_os_family == 'Debian'
@@ -15,6 +16,7 @@
     immediate: yes
     state: enabled
   loop:
+    - "{{ ssh_port }}"
     - "{ crdb_management_port }"
     - "{ crdb_db_port }"
   when: ansible_os_family == 'RedHat'
