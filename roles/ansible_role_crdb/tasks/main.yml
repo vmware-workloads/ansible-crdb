@@ -11,6 +11,9 @@
 - name: install cockroach executable
   ansible.builtin.include_tasks: ansible_task_install_cockroach_executable.yml
 
+- name: create user 'cockroach'
+  ansible.builtin.include_tasks: ansible_task_create_user.yml
+
 - name: generate SSL certifictes
   ansible.builtin.include_tasks: ansible_task_generate_ssl_certificates.yml
 

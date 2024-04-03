@@ -6,6 +6,10 @@ os_create_hosts_file: true
 # ref. https://www.cockroachlabs.com/docs/releases/
 crdb_url: https://binaries.cockroachdb.com/cockroach-v23.2.2.linux-amd64.tgz
 
+
+crdb_service_user: cockroach
+crdb_service_group: cockroach
+
 # Servers should advertise IP rather than hostname
 advertise_ip: True
 

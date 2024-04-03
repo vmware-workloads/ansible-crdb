@@ -1,0 +1,10 @@
+- name: Add service user and group
+  ansible.builtin.user:
+    name: "{{ crdb_service_user }}"
+    groups: "{{ crdb_service_group }}"
+    shell: /sbin/nologin
+    create_home: no
+    append: yes
+    comment: "CockroachDB nologin user"
+    state: present
+  become: true
