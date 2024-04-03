@@ -8,6 +8,9 @@
 - name: configure os parameters
   ansible.builtin.include_tasks: ansible_task_configure_os.yml
 
+- name: configure firewall
+  ansible.builtin.include_tasks: ansible_task_configure_firewall.yml
+
 - name: install cockroach executable
   ansible.builtin.include_tasks: ansible_task_install_cockroach_executable.yml
 
@@ -18,9 +21,8 @@
   ansible.builtin.include_tasks: ansible_task_generate_ssl_certificates.yml
 
 
-#- name: configure firewall
-#  ansible.builtin.include_tasks: ansible_task_configure_firewall.yml
-#
+
+
 #- name: get data volumes
 #  set_fact:
 #    crdb_data_disks: "{{ ansible_mounts | json_query('[].mount') | map('regex_search', '/data[0-9]*') | select('string') | list }}"
