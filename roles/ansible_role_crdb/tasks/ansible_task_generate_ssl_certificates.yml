@@ -8,6 +8,10 @@
       - my-safe-directory
     crdb_ssl_folder: /etc/ssl/crdb
 
+- name: print hostvars
+  ansible.builtin.debug:
+    var: hostvars
+
 - name: delete local certificate folder on ansible host
   local_action: file path=certificates state=absent
 
@@ -56,7 +60,7 @@
     cmd: >
       cockroach cert create-node 
       {{ item }}
-      {{ vars.hostvars[item]['hostname'] }}
+      {{ hostvars[item]['hostname'] }}
       localhost
       127.0.0.1
       {{ crdb_haproxy | join(' ') }}
