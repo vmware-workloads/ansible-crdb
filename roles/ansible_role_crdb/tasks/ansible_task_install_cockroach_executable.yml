@@ -23,6 +23,7 @@
     remote_src: yes
     src: "{{ tmp_folder }}/{{ crdb_version }}/cockroach"
     dest: "{{ cockroach_folder }}"
+    mode: 555
 
 - name: create cockroach library directory
   ansible.builtin.file:
@@ -35,6 +36,7 @@
     remote_src: yes
     src: "{{ tmp_folder }}/{{ crdb_version }}/lib/{{ item }}"
     dest: "{{ cockroach_library_folder }}"
+    mode: 444
   with_items:
     - libgeos.so
     - libgeos_c.so
