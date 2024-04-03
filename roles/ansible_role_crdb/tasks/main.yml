@@ -43,7 +43,8 @@
     owner: "{{ crdb_service_user }}"
     mode: '0700'
   with_fileglob:
-    - "{{ crdb_cert_folder }}/*"
+    - "{{ crdb_cert_folder }}/*.crt"
+    - "{{ crdb_cert_folder }}/*.key"
 
 - name: get data volumes
   set_fact:
