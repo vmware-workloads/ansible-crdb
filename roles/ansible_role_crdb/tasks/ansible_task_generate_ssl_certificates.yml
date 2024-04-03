@@ -7,7 +7,7 @@
       - certs
       - my-safe-directory
     crdb_ssl_folder: /etc/ssl/crdb
-    crdb_lb_items: "{{ (crdb_lb_ip + crdb_lb_hostnames) | default([]) }}"
+    crdb_lb_items: "{{ ((crdb_lb_ip | default([])) + (crdb_lb_hostnames | default([])) }}"
 
 - name: print hostvars
   ansible.builtin.debug:
