@@ -6,29 +6,20 @@
     cert_folders:
       - certs
       - my-safe-directory
+    crdb_ssl_folder: /etc/ssl/crdb
 
-- name: print bootstrap node name
-  ansible.builtin.debug:
-    msg: "node 0: '{{ play_hosts[0] }}'"
-  when: inventory_hostname == play_hosts[0]
-
-- name: print other nodes name
-  ansible.builtin.debug:
-    msg: "nodes: '{{ play_hosts }}'"
-  when: inventory_hostname == play_hosts[0]
-
-- name: delete local certificate folder
+- name: delete local certificate folder on ansible host
   local_action: file path=certificates state=absent
 
-- name: delete previous certificate folders on bootstrap node
-  file:
+- name: delete previous certificate folders on node 0
+  ansible.builtin.file:
     state: absent
     path: "{{ item }}/"
   with_items: "{{ cert_folders }}"
   when: inventory_hostname == play_hosts[0]
 
 - name: create certificate directories on bootstrap node
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: directory
     mode: '0750'
@@ -52,7 +43,7 @@
       --overwrite
   when: inventory_hostname == play_hosts[0]
 
-- name: copy CA certificate to automation system
+- name: copy CA certificate to ansible host
   ansible.builtin.copy:
     remote_src: true
     src: certs/ca.crt
@@ -81,7 +72,7 @@
     src: "{{ item }}"
     dest: "certificates"
   with_items: "{{ cert_folders }}"
-  when: inventory_hostname == bootstrap_node
+  when: inventory_hostname == play_hosts[0]
 
 - name: delete remote certificates folders
   ansible.builtin.file:
@@ -98,21 +89,9 @@
 - name: Copy file with owner and permissions
   ansible.builtin.copy:
     src:  "certificates/certs/{{ inventory_hostname }}/{{ item }}"
-    dest: /etc/ssl/crdb
+    dest: "{{ crdb_ssl_folder }}"
     mode: '0700'
   with_items:
   - ca.crt
   - node.crt
   - node.key
-
-- name: update systemd service
-  ansible.builtin.replace:
-    path: "/lib/systemd/system/cockroachdb.service"
-    regexp: '--insecure'
-    replace: '--certs-dir=/etc/ssl/crdb'
-
-- name: restart cockroach service
-  ansible.builtin.systemd:
-    name: cockroachdb
-    state: restarted
-    daemon_reload: yes

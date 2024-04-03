@@ -1,15 +1,19 @@
 - name: include OS specific variables.
   include_vars: "{{ ansible_os_family }}.yml"
 
+- name: generate hosts file
+  ansible.builtin.include_tasks: ansible_task_create_hosts_file.yml
+  when: (use_hosts_file | default(os_create_hosts_file) | bool)
+
 - name: configure os parameters
   ansible.builtin.include_tasks: ansible_task_configure_os.yml
 
 - name: install cockroach executable
   ansible.builtin.include_tasks: ansible_task_install_cockroach_executable.yml
 
-#- name: generate hosts file
-#  ansible.builtin.include_tasks: ansible_task_create_hosts_file.yml
-#  when: (use_hosts_file | default(os_create_hosts_file) | bool)
+- name: generate SSL certifictes
+  ansible.builtin.include_tasks: ansible_task_generate_ssl_certificates.yml
+
 
 #- name: configure firewall
 #  ansible.builtin.include_tasks: ansible_task_configure_firewall.yml

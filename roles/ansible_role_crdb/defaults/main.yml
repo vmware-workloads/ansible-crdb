@@ -1,6 +1,6 @@
 ---
 # Update hosts file CRDB node hostnames/IP
-os_create_hosts_file: True
+os_create_hosts_file: true
 
 # URL for downloading the cockroach binary
 # ref. https://www.cockroachlabs.com/docs/releases/
