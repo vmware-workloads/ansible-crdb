@@ -8,10 +8,6 @@
       - my-safe-directory
     crdb_lb_items: "{{ ( crdb_lb_ip | default([]) ) + ( crdb_lb_hostnames | default([]) ) }}"
 
-- name: print hostvars
-  ansible.builtin.debug:
-    var: hostvars
-
 - name: delete local certificate folder on ansible host
   local_action: file path=certificates state=absent
 

@@ -37,6 +37,14 @@
 - name: generate SSL certificates
   ansible.builtin.include_tasks: ansible_task_generate_ssl_certificates.yml
 
+- name: "set permissions in {{ crdb_cert_folder }}"
+  ansible.builtin.file:
+    path: "{{ item }}"
+    owner: "{{ crdb_service_user }}"
+    mode: '0700'
+  with_fileglob:
+    - "{{ crdb_cert_folder }}/*"
+
 - name: get data volumes
   set_fact:
     crdb_data_disks: "{{ ansible_mounts | json_query('[].mount') | map('regex_search', '/data[0-9]*') | select('string') | list }}"
