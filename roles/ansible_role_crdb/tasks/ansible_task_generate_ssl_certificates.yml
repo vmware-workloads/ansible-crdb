@@ -2,7 +2,7 @@
 # Ref. https://www.cockroachlabs.com/docs/stable/deploy-cockroachdb-on-premises
 #
 - name: set variables
-  ansible.builtin.fact:
+  ansible.builtin.set_fact:
     cert_folders:
       - certs
       - my-safe-directory
