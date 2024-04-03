@@ -1,3 +1,8 @@
+- name: set variables
+  ansible.builtin.set_fact:
+    crdb_folder: /var/lib/cockroach
+    crdb_cert_folder: /var/lib/cockroach/certs
+
 - name: include OS specific variables.
   include_vars: "{{ ansible_os_family }}.yml"
 
@@ -14,24 +19,33 @@
 - name: install cockroach executable
   ansible.builtin.include_tasks: ansible_task_install_cockroach_executable.yml
 
-- name: create user 'cockroach'
+- name: create service user and group
   ansible.builtin.include_tasks: ansible_task_create_user.yml
 
-- name: generate SSL certifictes
+- name: "create cockroach folder {{ crdb_folder }}"
+  ansible.builtin.file:
+    path: "{{ crdb_folder }}"
+    state: directory
+    owner: "{{ crdb_service_user }}"
+
+- name: "create cockroach certificate folder {{ crdb_cert_folder }}"
+  ansible.builtin.file:
+    path: "{{ crdb_cert_folder }}"
+    state: directory
+    owner: "{{ crdb_service_user }}"
+
+- name: generate SSL certificates
   ansible.builtin.include_tasks: ansible_task_generate_ssl_certificates.yml
 
+- name: get data volumes
+  set_fact:
+    crdb_data_disks: "{{ ansible_mounts | json_query('[].mount') | map('regex_search', '/data[0-9]*') | select('string') | list }}"
+  when: crdb_data_disks | length < 1
 
+- name: list data volumes
+  debug:
+    var: crdb_data_disks
 
-
-#- name: get data volumes
-#  set_fact:
-#    crdb_data_disks: "{{ ansible_mounts | json_query('[].mount') | map('regex_search', '/data[0-9]*') | select('string') | list }}"
-#  when: crdb_data_disks | length < 1
-#
-#- name: list data volumes
-#  debug:
-#    var: crdb_data_disks
-#
 #- name: create bootstrap server list
 #  set_fact:
 #    bootstrap: "{{ play_hosts[:3] }}"

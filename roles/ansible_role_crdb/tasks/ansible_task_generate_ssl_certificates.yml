@@ -6,7 +6,6 @@
     cert_folders:
       - certs
       - my-safe-directory
-    crdb_ssl_folder: /etc/ssl/crdb
     crdb_lb_items: "{{ ( crdb_lb_ip | default([]) ) + ( crdb_lb_hostnames | default([]) ) }}"
 
 - name: print hostvars
@@ -87,15 +86,10 @@
   with_items: "{{ cert_folders }}"
   when: inventory_hostname == play_hosts[0]
 
-- name: create remote certificate directories
-  ansible.builtin.file:
-    path: /etc/ssl/crdb
-    state: directory
-
 - name: Copy file with owner and permissions
   ansible.builtin.copy:
     src:  "certificates/certs/{{ inventory_hostname }}/{{ item }}"
-    dest: "{{ crdb_ssl_folder }}"
+    dest: "{{ crdb_cert_folder }}"
     mode: '0700'
   with_items:
   - ca.crt
