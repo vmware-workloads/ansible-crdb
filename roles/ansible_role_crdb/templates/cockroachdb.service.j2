@@ -8,13 +8,13 @@ Requires=network.target
 [Service]
 Type=notify
 WorkingDirectory=/var/lib/cockroach
-ExecStart=/usr/local/bin/cockroach start --certs-dir=certs \
+ExecStart=/usr/local/bin/cockroach start {% if (crdb_ptp | bool) %}--clock-device={{ crdb_ptp_dev }}{% endif %} \
+                                         --certs-dir=certs \
                                          --advertise-addr={{ inventory_hostname }} \
                                          --join={{ bootstrap | join(',') }} \
+                                         {% for item in crdb_data_disks %}--store={{ item }} {% endfor %} \
                                          --cache=.25 \
-                                         --max-sql-memory=.25 \
-                                         {% if (crdb_ptp | bool) %}--clock-device={{ crdb_ptp_dev }}{% endif %} \
-                                         {% for item in crdb_data_disks %}--store={{ item }} {% endfor %}
+                                         --max-sql-memory=.25
 TimeoutStopSec=300
 Restart=always
 RestartSec=10
