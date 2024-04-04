@@ -88,15 +88,8 @@
     enabled: yes
     state: started
     masked: no
-  when: inventory_hostname in play_hosts[4:]
+  when: inventory_hostname in play_hosts[3:]
   register: other_nodes_st
-
-- name: restart servers if cockroach versions changed
-  systemd:
-    name: "{{ crdb_service }}"
-    state: restarted
-  when:
-    - (((first_bootstrap is success) or (other_bootstrap is success) or (non_bootstrap is success)) and (folder_symlink is changed)) or (cockroach_systemd_service is changed)
 
 #- name: check if the database is initialized
 #  shell: "{{ crdb_executable }} sql --insecure --host {{play_hosts[0]}} --execute 'select 1'"
