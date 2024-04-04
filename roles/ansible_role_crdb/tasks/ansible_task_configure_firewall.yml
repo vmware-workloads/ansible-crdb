@@ -6,7 +6,8 @@
   loop:
     - "{{ ssh_port }}"
     - "{{ crdb_management_port }}"
-    - "{{ crdb_db_port }}"
+    - "{{ crdb_sql_port }}"
+    - "{{ crdb_rpc_port }}"
   when: ansible_os_family == 'Debian'
 
 - name: configure firewall (firewalld)
@@ -18,5 +19,6 @@
   loop:
     - "{{ ssh_port }}"
     - "{ crdb_management_port }"
-    - "{ crdb_db_port }"
+    - "{{ crdb_sql_port }}"
+    - "{{ crdb_rpc_port }}"
   when: ansible_os_family == 'RedHat'

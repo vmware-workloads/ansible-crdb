@@ -17,7 +17,8 @@ advertise_ip: True
 ssh_port: 22
 
 # Cockroach DB PSQL port
-crdb_db_port: 26257
+crdb_sql_port: 26257
+crdb_rpc_port: 26357
 
 # Cockroach DB management port
 crdb_management_port: 8080
