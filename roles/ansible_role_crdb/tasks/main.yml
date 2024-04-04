@@ -37,14 +37,7 @@
 - name: generate SSL certificates
   ansible.builtin.include_tasks: ansible_task_generate_ssl_certificates.yml
 
-- name: "set permissions in {{ crdb_cert_folder }}"
-  ansible.builtin.file:
-    path: "{{ item }}"
-    owner: "{{ crdb_service_user }}"
-    mode: '0700'
-  with_fileglob:
-    - "{{ crdb_cert_folder }}/*.crt"
-    - "{{ crdb_cert_folder }}/*.key"
+###
 
 - name: get data volumes
   set_fact:
@@ -55,20 +48,21 @@
   debug:
     var: crdb_data_disks
 
-#- name: create bootstrap server list
-#  set_fact:
-#    bootstrap: "{{ play_hosts[:3] }}"
-#
-#- name: bootstrap servers
-#  debug:
-#    var: bootstrap
-#
-#- name: create cockroachdb.service
-#  ansible.builtin.template:
-#    src: "{{ crdb_service_template }}"
-#    dest: "/lib/systemd/system/{{ crdb_service }}.service"
-#    mode: 0644
-#  register: cockroach_systemd_service
+- name: create bootstrap server list
+  set_fact:
+    bootstrap: "{{ play_hosts[:3] }}"
+
+- name: bootstrap servers
+  debug:
+    var: bootstrap
+
+- name: create cockroachdb.service
+  ansible.builtin.template:
+    src: "{{ crdb_service_template }}"
+    dest: "/lib/systemd/system/{{ crdb_service }}.service"
+    mode: 0644
+  register: cockroach_systemd_service
+
 #
 #- name: start and enable the first bootstrap server
 #  ansible.builtin.systemd:

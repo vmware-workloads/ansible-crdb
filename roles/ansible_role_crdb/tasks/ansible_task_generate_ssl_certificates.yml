@@ -6,6 +6,10 @@
     cert_folders:
       - certs
       - my-safe-directory
+    cert_files:
+      - ca.crt
+      - node.crt
+      - node.key
     crdb_lb_items: "{{ ( crdb_lb_ip | default([]) ) + ( crdb_lb_hostnames | default([]) ) }}"
 
 - name: delete local certificate folder on ansible host
@@ -86,8 +90,6 @@
   ansible.builtin.copy:
     src:  "certificates/certs/{{ inventory_hostname }}/{{ item }}"
     dest: "{{ crdb_cert_folder }}"
-    mode: '0700'
-  with_items:
-  - ca.crt
-  - node.crt
-  - node.key
+    owner: "{{ crdb_service_user }}"
+    mode: '0600'
+  with_items: "{{ cert_files }}"
