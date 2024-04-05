@@ -12,8 +12,12 @@ Type=notify
 WorkingDirectory=/var/lib/cockroach
 ExecStart=/usr/local/bin/cockroach start {% if (crdb_ptp | bool) %}--clock-device={{ crdb_ptp_dev }}{% endif %} \
                                          --certs-dir=certs \
-                                         --advertise-addr={{ inventory_hostname }} \
-                                         --join={{ bootstrap | join(',') }} \
+                                         --advertise-addr={{ inventory_hostname }}:{{ crdb_rpc_port }} \
+                                         --listen-addr={{ inventory_hostname }}:{{ crdb_rpc_port }} \
+                                         --sql-addr=:{{ crdb_sql_port }} \
+                                         {% for join in bootstrap %}
+                                         --join={{ join }}:{{ crdb_rpc_port }} \
+                                         {% endfor %}
                                          {% for item in crdb_data_disks %}--store={{ item }} {% endfor %} \
                                          --cache=.25 \
                                          --max-sql-memory=.25
@@ -27,3 +31,4 @@ User=cockroach
 
 [Install]
 WantedBy=default.target
+
