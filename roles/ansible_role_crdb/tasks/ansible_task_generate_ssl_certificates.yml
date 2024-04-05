@@ -50,7 +50,7 @@
 - name: copy CA certificate to ansible host
   ansible.builtin.copy:
     remote_src: true
-    src: certs/ca.
+    src: certs/ca.crt
     dest: "certs/{{ item }}/ca.crt"
   with_items: "{{ play_hosts }}"
   when: inventory_hostname == play_hosts[0]
