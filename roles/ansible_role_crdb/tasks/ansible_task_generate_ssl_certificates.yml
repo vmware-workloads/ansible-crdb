@@ -106,7 +106,7 @@
 
 - name: Copy file with owner and permissions
   ansible.builtin.copy:
-    src:  "certificates/certs/{{ inventory_hostname }}/{{ item }}/"
+    src:  "certificates/certs/{{ inventory_hostname }}/"
     dest: "{{ crdb_cert_folder }}"
     owner: "{{ crdb_service_user }}"
     mode: '0600'
