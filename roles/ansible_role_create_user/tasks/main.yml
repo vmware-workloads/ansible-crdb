@@ -2,9 +2,8 @@
   ansible.builtin.group:
     name: "{{ crdb_service_group }}"
     state: present
-  become: true
 
-- name: Add service user and group
+- name: add service user and group
   ansible.builtin.user:
     name: "{{ crdb_service_user }}"
     groups: "{{ crdb_service_group }}"
@@ -13,4 +12,3 @@
     append: yes
     comment: "CockroachDB nologin user"
     state: present
-  become: true

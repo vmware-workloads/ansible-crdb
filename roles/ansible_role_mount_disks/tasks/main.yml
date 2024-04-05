@@ -4,7 +4,7 @@
       - hardware
 
 - name: get disks (/dev/sd*) except sda (OS)
-  set_fact:
+  ansible.builtin.set_fact:
     disks: "{{ disks|default([]) + [ '/dev/' ~ item ] }}"
   loop: "{{ hostvars[inventory_hostname].ansible_devices.keys() | map('regex_search', 'sd([b-z]+|[a-z]{2})') | select('string') | list | sort }}"
 
@@ -13,7 +13,7 @@
     var: disks
 
 - name: get mounted devices
-  set_fact:
+  ansible.builtin.set_fact:
     mounted_disks: "{{ ansible_mounts|json_query('[].device') }}"
 
 - name: list mounted disks
@@ -29,16 +29,21 @@
   loop: "{{ disks }}"
 
 - name: create filesystem
-  filesystem:
+  community.general.filesystem:
     fstype: "{{ filesystem | default(default_filesystem) }}"
     dev: "{{ item }}1"
   when: item not in mounted_disks
   loop: "{{ disks }}"
 
+- name: "create folder {{ crdb_folder }}"
+  ansible.builtin.file:
+    path: "{{ crdb_folder }}"
+    state: directory
+
 - name: mount data volumes
-  mount:
+  ansible.posix.mount:
     src: "{{ item }}1"
-    path: "/data{{ my_index }}"
+    path: "/{{ crdb_folder }}/data{{ my_index }}"
     opts: defaults
     state: mounted
     fstype: "{{ filesystem | default(default_filesystem) }}"

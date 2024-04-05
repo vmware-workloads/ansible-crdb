@@ -6,7 +6,7 @@ os_create_hosts_file: true
 # ref. https://www.cockroachlabs.com/docs/releases/
 crdb_url: https://binaries.cockroachdb.com/cockroach-v23.2.2.linux-amd64.tgz
 
-
+# Service User and Group
 crdb_service_user: cockroach
 crdb_service_group: cockroach
 
@@ -34,17 +34,13 @@ crdb_remote_debugging_mode: 'off'
 crdb_data_disks: []
 
 # CRDB executable installation path
-crdb_folder: /opt/cockroach
+crdb_folder: /var/lib/cockroach
+crdb_cert_folder: /var/lib/cockroach/certs
 crdb_executable: /usr/local/bin/cockroach
 
 # Use PTP
 crdb_ptp: True
 crdb_ptp_dev: /dev/ptp0
-
-# Use SSL
-crdb_ssl: False
-crdb_ssl_mode_disable: disable
-crdb_ssl_mode_secure: verify-full&sslrootcert=/root/certs/ca.crt&sslcert=/root/certs/client.root.crt&sslkey=/root/certs/client.root.key
 
 # CRDB systemd service name
 crdb_service: cockroachdb

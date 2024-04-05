@@ -13,8 +13,6 @@ WorkingDirectory=/var/lib/cockroach
 ExecStart=/usr/local/bin/cockroach start {% if (crdb_ptp | bool) %}--clock-device={{ crdb_ptp_dev }}{% endif %} \
                                          --certs-dir=certs \
                                          --advertise-addr={{ inventory_hostname }} \
-                                         --listen-addr=:26357 \
-                                         --sql-addr=:26257 \
                                          --join={{ bootstrap | join(',') }} \
                                          {% for item in crdb_data_disks %}--store={{ item }} {% endfor %} \
                                          --cache=.25 \
