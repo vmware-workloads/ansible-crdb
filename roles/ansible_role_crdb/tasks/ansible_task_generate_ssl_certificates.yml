@@ -55,6 +55,14 @@
   with_items: "{{ play_hosts }}"
   when: inventory_hostname == play_hosts[0]
 
+- name: copy CA key to ansible host
+  ansible.builtin.copy:
+    remote_src: true
+    src: my-safe-directory/ca.key
+    dest: "certs/{{ item }}/ca.key"
+  with_items: "{{ play_hosts }}"
+  when: inventory_hostname == play_hosts[0]
+
 - name: generate crdb node certificates
   ansible.builtin.shell:
     cmd: >
@@ -65,6 +73,16 @@
       localhost
       127.0.0.1
       {{ crdb_lb_items | join(' ') }}
+      --certs-dir=certs/{{ item }}
+      --ca-key=my-safe-directory/ca.key
+  with_items: "{{ play_hosts }}"
+  when: inventory_hostname == play_hosts[0]
+
+- name: generate cockroach 'root' user certificate
+  ansible.builtin.shell:
+    cmd: >
+      cockroach cert create-client 
+      root
       --certs-dir=certs/{{ item }}
       --ca-key=my-safe-directory/ca.key
   with_items: "{{ play_hosts }}"
