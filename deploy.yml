@@ -23,8 +23,8 @@
   roles:
     - ansible_role_kernel_update
     - ansible_role_chrony
+    - ansible_role_create_user
     - ansible_role_mount_disks
-
 
 - name: Deploy CockroachDB
   hosts: crdb
