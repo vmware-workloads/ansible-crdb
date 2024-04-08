@@ -26,7 +26,7 @@
     path: /dev/ptp0
   register: ptp_exists
 
-- name: Creating a file with content
+- name: Creating /etc/udev/rules.d/30-ptp.rules to set ptp0 permissions
   ansible.builtin.copy:
     dest: /etc/udev/rules.d/30-ptp.rules
     content: |
