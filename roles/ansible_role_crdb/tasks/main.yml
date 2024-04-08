@@ -97,7 +97,7 @@
   ansible.builtin.shell:
     cmd: >
       cockroach init 
-      --certs-dir=certs
+      --certs-dir=/var/lib/cockroach/certs
       --host=localhost:{{ crdb_rpc_port }}
   register: result
   #failed_when: result.rc != 0 and 'cluster has already been initialized' not in result.stderr and 'unable to bootstrap due to internal error' not in result.stderr
