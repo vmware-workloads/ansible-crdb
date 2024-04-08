@@ -75,6 +75,10 @@
     masked: no
   when: inventory_hostname == play_hosts[0]
 
+- name: Pause for 15 seconds to let the server start
+  ansible.builtin.pause:
+    seconds: 15
+
 - name: check if the database is initialized
   ansible.builtin.shell:
     cmd: >
