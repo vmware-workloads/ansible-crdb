@@ -107,7 +107,7 @@
       cockroach sql 
       --certs-dir=/var/lib/cockroach/certs 
       --host=localhost:{{ crdb_sql_port }}
-      --execute 'CREATE USER IF NOT EXISTS {{ crdb_default_db_user }} WITH PASSWORD "{{ crdb_default_db_password }}"'
+      --execute "CREATE USER IF NOT EXISTS {{ crdb_default_db_user }} WITH PASSWORD '{{ crdb_default_db_password }}'"
   when: inventory_hostname == play_hosts[0]
 
 - name: grant admin to user cockroach
