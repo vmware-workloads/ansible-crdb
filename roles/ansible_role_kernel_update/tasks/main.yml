@@ -23,7 +23,7 @@
 
 - name: Check if /dev/ptp0 exists
   ansible.builtin.stat:
-    path: [path to the file or directory you want to check]
+    path: /dev/ptp0
     register: ptp_exists
 
 - name: Creating a file with content
