@@ -92,6 +92,8 @@
   when: inventory_hostname == play_hosts[0]
 
 - name: initialize the database
+  timeout: 5
+  become_method: sudo
   ansible.builtin.shell:
     cmd: >
       cockroach init 
