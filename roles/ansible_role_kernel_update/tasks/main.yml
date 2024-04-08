@@ -20,3 +20,21 @@
   ansible.builtin.reboot:
     reboot_timeout: 300
   when: kernel_st.changed
+
+- name: Check if /dev/ptp0 exists
+  ansible.builtin.stat:
+    path: [path to the file or directory you want to check]
+    register: ptp_exists
+
+- name: Creating a file with content
+  ansible.builtin.copy:
+    dest: /etc/udev/rules.d/30-ptp.rules
+    content: |
+      SUBSYSTEM=="ptp", ACTION=="add", GROUP="mydevice", MODE="0664"
+    register: ptp_udev
+    when: ptp_exists.stat.exists
+
+- name: rebooting machine
+  ansible.builtin.reboot:
+    reboot_timeout: 300
+  when: ptp_udev.changed
