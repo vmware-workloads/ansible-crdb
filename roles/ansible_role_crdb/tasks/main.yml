@@ -83,7 +83,7 @@
   ansible.builtin.shell:
     cmd: >
       cockroach sql 
-      --certs-dir=certs 
+      --certs-dir=/var/lib/cockroach/certs 
       --host=localhost:{{ crdb_sql_port }}
       --execute 'select 1'
   register: running_st
@@ -107,7 +107,7 @@
   ansible.builtin.shell:
     cmd: >
       cockroach sql 
-      --certs-dir=certs 
+      --certs-dir=/var/lib/cockroach/certs 
       --host={{ play_hosts[0] }}:{{ crdb_sql_port }}
       --execute 'CREATE USER IF NOT EXISTS {{ crdb_default_db_user }} WITH PASSWORD '{{ crdb_default_db_password }}'
   when: inventory_hostname == play_hosts[0]
@@ -116,7 +116,7 @@
   ansible.builtin.shell:
     cmd: >
       cockroach sql 
-      --certs-dir=certs 
+      --certs-dir=/var/lib/cockroach/certs 
       --host={{ play_hosts[0] }}:{{ crdb_sql_port }}
       --execute 'GRANT admin TO {{ crdb_default_db_user }}'
   when: inventory_hostname == play_hosts[0]
