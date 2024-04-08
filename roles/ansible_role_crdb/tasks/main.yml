@@ -88,7 +88,6 @@
   when: inventory_hostname == play_hosts[0]
 
 - name: initialize the database
-  run_once: true
   ansible.builtin.shell:
     cmd: >
       cockroach init 
