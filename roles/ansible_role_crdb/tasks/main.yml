@@ -80,7 +80,6 @@
     seconds: 15
 
 - name: check if the database is initialized
-  timeout: 15
   ansible.builtin.shell:
     cmd: >
       cockroach sql 
@@ -93,7 +92,6 @@
   when: inventory_hostname == play_hosts[0]
 
 - name: initialize the database
-  timeout: 15
   ansible.builtin.shell:
     cmd: >
       cockroach init 
@@ -104,13 +102,12 @@
   when: (inventory_hostname == play_hosts[0]) and (running_st.rc != 0)
 
 - name: "create default user ({{ crdb_default_db_user }}/{{ crdb_default_db_password }})"
-  timeout: 15
   ansible.builtin.shell:
     cmd: >
       cockroach sql 
       --certs-dir=/var/lib/cockroach/certs 
-      --host={{ play_hosts[0] }}:{{ crdb_sql_port }}
-      --execute "CREATE USER IF NOT EXISTS {{ crdb_default_db_user }} WITH PASSWORD '{{ crdb_default_db_password }}'"
+      --host=localhost:{{ crdb_sql_port }}
+      --execute 'CREATE USER IF NOT EXISTS {{ crdb_default_db_user }} WITH PASSWORD "{{ crdb_default_db_password }}"'
   when: inventory_hostname == play_hosts[0]
 
 - name: grant admin to user cockroach
@@ -119,7 +116,7 @@
     cmd: >
       cockroach sql 
       --certs-dir=/var/lib/cockroach/certs 
-      --host={{ play_hosts[0] }}:{{ crdb_sql_port }}
+      --host=localhost:{{ crdb_sql_port }}
       --execute 'GRANT admin TO {{ crdb_default_db_user }}'
   when: inventory_hostname == play_hosts[0]
 
