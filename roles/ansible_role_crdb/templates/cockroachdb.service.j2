@@ -11,14 +11,14 @@ Requires=network.target
 Type=notify
 WorkingDirectory=/var/lib/cockroach
 ExecStart=/usr/local/bin/cockroach start {% if (crdb_ptp | bool) %}--clock-device={{ crdb_ptp_dev }}{% endif %} \
-                                         --certs-dir=certs \
+                                         {{ use_ssl | ternary(crdb_secure_flag, crdb_insecure_flag) }} \
                                          --advertise-addr=:{{ crdb_rpc_port }} \
                                          --listen-addr=:{{ crdb_rpc_port }} \
                                          --sql-addr=:{{ crdb_sql_port }} \
                                          {% for join in bootstrap %}
-                                         --join={{ hostvars[join]['ansible_facts'].hostname }}:{{ crdb_rpc_port }} \
+--join={{ hostvars[join]['ansible_facts'].hostname }}:{{ crdb_rpc_port }} \
                                          {% endfor %}
-                                         {% for item in crdb_data_disks %}--store={{ item }} {% endfor %} \
+                                         {% for item in data_disks %}--store={{ item }} {% endfor %} \
                                          --cache=.25 \
                                          --max-sql-memory=.25
 TimeoutStopSec=300

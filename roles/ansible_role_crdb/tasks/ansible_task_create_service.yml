@@ -1,0 +1,23 @@
+
+- name: Use multiple patterns that contain a comma formatted as a YAML list
+  ansible.builtin.find:
+    paths: "{{ crdb_folder }}"
+    file_type: directory
+    use_regex: yes
+    patterns: "^data\d+$"
+  register: output
+
+- name: set data disk variable
+  ansible.builtin.set_fact:
+    data_disks: output.files | default([])
+
+- name: set bootstrap servers
+  ansible.builtin.set_fact:
+    bootstrap: play_hosts[:3]
+
+- name: create cockroachdb.service
+  ansible.builtin.template:
+    src: "{{ crdb_service_template }}"
+    dest: "/lib/systemd/system/{{ crdb_service }}.service"
+    mode: '0644'
+  register: cockroach_systemd_service

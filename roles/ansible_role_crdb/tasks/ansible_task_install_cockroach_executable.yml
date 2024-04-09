@@ -40,3 +40,15 @@
   with_items:
     - libgeos.so
     - libgeos_c.so
+
+- name: "create cockroach folder {{ crdb_folder }}"
+  ansible.builtin.file:
+    path: "{{ crdb_folder }}"
+    state: directory
+    owner: "{{ crdb_service_user }}"
+
+- name: "create cockroach certificate folder {{ crdb_cert_folder }}"
+  ansible.builtin.file:
+    path: "{{ crdb_cert_folder }}"
+    state: directory
+    owner: "{{ crdb_service_user }}"

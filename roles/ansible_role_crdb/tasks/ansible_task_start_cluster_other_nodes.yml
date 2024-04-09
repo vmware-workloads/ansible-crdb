@@ -1,0 +1,7 @@
+- name: start and enable the remaining bootstrap servers
+  ansible.builtin.systemd:
+    name: "{{ crdb_service }}"
+    enabled: yes
+    state: started
+    masked: no
+  when: inventory_hostname in play_hosts[1:]
