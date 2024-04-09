@@ -13,6 +13,7 @@
   ansible.builtin.apt:
     name:
       - "{{ apt_kernel_6_package }}"
+    lock_timeout: 120  
   register: kernel_st
   when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
 
