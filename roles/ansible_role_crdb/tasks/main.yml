@@ -30,11 +30,6 @@
   ansible.builtin.include_tasks: ansible_task_generate_ssl_certificates.yml
 
 ###
-- name: set ptp device permissions
-  ansible.builtin.file:
-    path: "{{ crdb_ptp_dev }}"
-    mode: '0644'
-  when: crdb_ptp
 
 - name: get data volumes
   set_fact:
@@ -52,20 +47,14 @@
     group: "{{ crdb_service_group }}"
   loop: "{{ crdb_data_disks }}"
 
-- name: create bootstrap server list
-  set_fact:
-    bootstrap: "{{ play_hosts[:3] }}"
-
-- name: bootstrap servers
-  debug:
-    var: bootstrap
-
 - name: create cockroachdb.service
   ansible.builtin.template:
     src: "{{ crdb_service_template }}"
     dest: "/lib/systemd/system/{{ crdb_service }}.service"
     mode: '0644'
   register: cockroach_systemd_service
+
+
 
 - name: start and enable the first server
   ansible.builtin.systemd:

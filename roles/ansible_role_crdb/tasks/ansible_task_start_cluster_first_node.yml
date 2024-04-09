@@ -1,0 +1,48 @@
+- name: start and enable the first server
+  ansible.builtin.systemd:
+    name: "{{ crdb_service }}"
+    enabled: yes
+    state: started
+    masked: no
+
+- name: Pause for 15 seconds to let the server start
+  ansible.builtin.pause:
+    seconds: 15
+
+- name: check if the database is initialized
+  ansible.builtin.shell:
+    cmd: >
+      cockroach sql 
+      --certs-dir=/var/lib/cockroach/certs 
+      --host=localhost:{{ crdb_sql_port }}
+      --execute 'select 1'
+  register: running_st
+  changed_when: false
+  failed_when: running_st.rc != 1 and running_st.rc != 0
+
+- name: initialize the database
+  ansible.builtin.shell:
+    cmd: >
+      cockroach init 
+      --certs-dir=/var/lib/cockroach/certs
+      --host=localhost:{{ crdb_rpc_port }}
+  register: result
+  #failed_when: result.rc != 0 and 'cluster has already been initialized' not in result.stderr and 'unable to bootstrap due to internal error' not in result.stderr
+  when: running_st.rc != 0
+
+- name: "create default user ({{ crdb_default_db_user }}/{{ crdb_default_db_password }})"
+  ansible.builtin.shell:
+    cmd: >
+      cockroach sql 
+      --certs-dir=/var/lib/cockroach/certs 
+      --host=localhost:{{ crdb_sql_port }}
+      --execute "CREATE USER IF NOT EXISTS {{ crdb_default_db_user }} WITH PASSWORD '{{ crdb_default_db_password }}'"
+
+- name: grant admin to user cockroach
+
+  ansible.builtin.shell:
+    cmd: >
+      cockroach sql 
+      --certs-dir=/var/lib/cockroach/certs 
+      --host=localhost:{{ crdb_sql_port }}
+      --execute 'GRANT admin TO {{ crdb_default_db_user }}'
