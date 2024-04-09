@@ -5,7 +5,7 @@
   ansible.builtin.set_fact:
     use_hosts_file: (crdb_use_hosts_file | default(crdb_default_use_hosts_file)) | bool
     use_ssl: (crdb_use_ssl | default(crdb_default_use_ssl)) | bool
-    data_filesystem: crdb_data_filesystem | default(crdb_default_data_filesystem)
+    data_filesystem: "{{ crdb_data_filesystem | default(crdb_default_data_filesystem) }}"
 
 - name: generate hosts file
   ansible.builtin.include_tasks: ansible_task_create_hosts_file.yml
