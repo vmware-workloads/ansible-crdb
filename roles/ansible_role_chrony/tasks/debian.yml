@@ -2,6 +2,7 @@
   ansible.builtin.apt:
     name:
       - chrony
+    lock_timeout: 120  
   when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
 
 - name: create chrony configuration
