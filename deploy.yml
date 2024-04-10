@@ -42,8 +42,8 @@
   gather_facts: true
   any_errors_fatal: true
   vars:
-    #crdb_data_filesystem: ext4
-    #crdb_use_hosts_file: true
-    #crdb_use_ssl: true
+    crdb_data_filesystem: xfs
+    crdb_use_hosts_file: true
+    crdb_use_ssl: true
   roles:
     - ansible_role_crdb
