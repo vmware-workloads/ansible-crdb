@@ -19,7 +19,7 @@
   ansible.builtin.file:
     path: "{{ item['path'] }}"
     recurse: yes
-    mode: 770
+    mode: "0770"
     owner: "{{ crdb_service_user }}"
     group: "{{ crdb_service_group }}"
   loop: "{{ data_disks }}"
