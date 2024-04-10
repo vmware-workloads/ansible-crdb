@@ -59,14 +59,3 @@
   ansible.builtin.set_fact:
     crdb_data_disks: "{{ ansible_mounts | json_query('[].mount') | map('regex_search', '/var/lib/cockroach/data[0-9]+') | select('string') | list }}"
 
-- name: list data volumes
-  ansible.builtin.debug:
-    var: crdb_data_disks
-
-- name: set data volume permissions
-  ansible.builtin.file:
-    path: "{{ item }}"
-    owner: "{{ crdb_service_user }}"
-    group: "{{ crdb_service_group }}"
-  loop: "{{ crdb_data_disks }}"
-
