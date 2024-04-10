@@ -4,7 +4,7 @@
     paths: "{{ crdb_folder }}"
     file_type: directory
     use_regex: yes
-    patterns: "^data\d+$"
+    patterns: "^data\\d+$"
   register: output
 
 - name: set data disk variable
