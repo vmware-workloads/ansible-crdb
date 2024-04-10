@@ -7,6 +7,11 @@
     use_ssl: (crdb_use_ssl | default(crdb_default_use_ssl)) | bool
     data_filesystem: "{{ crdb_data_filesystem | default(crdb_default_data_filesystem) }}"
 
+- name: print filesystem
+  ansible.builtin.debug:
+    msg: "filesystem: '{{ data_filesystem}}'"
+
+
 - name: generate hosts file
   ansible.builtin.include_tasks: ansible_task_create_hosts_file.yml
   when: use_hosts_file
