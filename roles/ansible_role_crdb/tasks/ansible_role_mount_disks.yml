@@ -32,7 +32,6 @@
   community.general.filesystem:
     fstype: "{{ data_filesystem }}"
     dev: "{{ item }}1"
-    force: true
   when: item not in mounted_disks
   loop: "{{ disks }}"
 
