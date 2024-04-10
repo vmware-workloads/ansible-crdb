@@ -21,10 +21,6 @@
       retries: 50
       delay: 5
 
-    - name: fail
-      ansible.builtin.fail:
-
-
 - name: OS updates
   hosts: crdb
   gather_facts: true
