@@ -1,4 +1,3 @@
-
 - name: Use multiple patterns that contain a comma formatted as a YAML list
   ansible.builtin.find:
     paths: "{{ crdb_folder }}"
@@ -19,7 +18,7 @@
   ansible.builtin.file:
     path: "{{ item['path'] }}"
     recurse: yes
-    mode: "0770"
+    mode: "751"
     owner: "{{ crdb_service_user }}"
     group: "{{ crdb_service_group }}"
   loop: "{{ data_disks }}"
