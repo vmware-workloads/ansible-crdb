@@ -25,8 +25,16 @@
     device: "{{ item }}"
     number: 1
     state: present
+    label: gpt
+    name: data
+    resize: true
   when: item not in mounted_disks
   loop: "{{ disks }}"
+
+- name: wipe filesystem
+  wipefs -a "{{ item }}1"
+  when: item not in mounted_disks
+  loop: "{{ disks }}" 
 
 - name: create filesystem
   community.general.filesystem:
