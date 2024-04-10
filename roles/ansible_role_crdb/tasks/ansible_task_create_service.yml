@@ -24,7 +24,7 @@
     group: "{{ crdb_service_group }}"
   loop: "{{ data_disks }}"
 
-- name: set bootstrap servers
+- name: set bootstrap serversgit
   ansible.builtin.set_fact:
     bootstrap: "{{ play_hosts[:3] }}"
 
