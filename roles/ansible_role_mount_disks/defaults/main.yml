@@ -1,2 +1,0 @@
-default_filesystem: ext4
-crdb_folder: /var/lib/cockroach

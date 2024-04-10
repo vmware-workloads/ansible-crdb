@@ -25,20 +25,23 @@
     device: "{{ item }}"
     number: 1
     state: present
+    label: gpt
+    name: data
+    resize: true
   when: item not in mounted_disks
   loop: "{{ disks }}"
+
+- name: wipe filesystem
+  command: wipefs -a "{{ item }}1"
+  when: item not in mounted_disks
+  loop: "{{ disks }}" 
 
 - name: create filesystem
   community.general.filesystem:
-    fstype: "{{ filesystem | default(default_filesystem) }}"
+    fstype: "{{ data_filesystem }}"
     dev: "{{ item }}1"
   when: item not in mounted_disks
   loop: "{{ disks }}"
-
-- name: "create folder {{ crdb_folder }}"
-  ansible.builtin.file:
-    path: "{{ crdb_folder }}"
-    state: directory
 
 - name: mount data volumes
   ansible.posix.mount:
@@ -46,8 +49,13 @@
     path: "/{{ crdb_folder }}/data{{ my_index }}"
     opts: defaults
     state: mounted
-    fstype: "{{ filesystem | default(default_filesystem) }}"
+    fstype: "{{ data_filesystem }}"
   when: item not in mounted_disks
   loop: "{{ vars.disks }}"
   loop_control:
     index_var: my_index
+
+- name: get data volumes
+  ansible.builtin.set_fact:
+    crdb_data_disks: "{{ ansible_mounts | json_query('[].mount') | map('regex_search', '/var/lib/cockroach/data[0-9]+') | select('string') | list }}"
+

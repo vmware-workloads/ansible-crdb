@@ -1,3 +1,22 @@
+#
+# Ref. https://www.cockroachlabs.com/docs/stable/recommended-production-settings
+#
+- name: configure /etc/pam.d/common-session
+  ansible.builtin.lineinfile:
+    path: /etc/pam.d/common-session
+    regexp: ^session\s+required\s+pam_limits.so\s*$
+    line: session    required   pam_limits.so
+    state: present
+  register: common_session_st
+
+- name: configure /etc/pam.d/common-session-noninteractive
+  ansible.builtin.lineinfile:
+    path: /etc/pam.d/common-session-noninteractive
+    regexp: ^session\s+required\s+pam_limits.so\s*$
+    line: session    required   pam_limits.so
+    state: present
+  register: common_session_noninteractive_st
+
 - name: configure limits.conf
   ansible.builtin.blockinfile:
     path: /etc/security/limits.conf
@@ -10,4 +29,4 @@
 - name: rebooting machine
   ansible.builtin.reboot:
     reboot_timeout: 300
-  when: limits_conf_st.changed
+  when: limits_conf_st.changed or common_session_st.changed or common_session_noninteractive_st.changed

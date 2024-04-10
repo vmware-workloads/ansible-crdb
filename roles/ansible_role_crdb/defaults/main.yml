@@ -1,6 +1,14 @@
 ---
 # Update hosts file CRDB node hostnames/IP
-os_create_hosts_file: true
+crdb_default_use_hosts_file: true
+
+# Data disk properties
+crdb_default_data_filesystem: xfs
+
+# SSL
+crdb_default_use_ssl: true
+crdb_secure_flag: --certs-dir=/var/lib/cockroach/certs
+crdb_insecure_flag: --insecure
 
 # URL for downloading the cockroach binary
 # ref. https://www.cockroachlabs.com/docs/releases/
@@ -10,25 +18,16 @@ crdb_url: https://binaries.cockroachdb.com/cockroach-v23.2.2.linux-amd64.tgz
 crdb_service_user: cockroach
 crdb_service_group: cockroach
 
-# Default account
+# Default database account
 crdb_default_db_user: cockroach
 crdb_default_db_password: cockroach
-
-# Servers should advertise IP rather than hostname
-advertise_ip: True
-
-# SSH Port
-ssh_port: 22
-
-# Cockroach DB PSQL port
-crdb_sql_port: 26257
-crdb_rpc_port: 26357
 
 # Cockroach DB management port
 crdb_management_port: 8080
 
-# CRDB parameters
-crdb_rack_count: 1
+# Cockroach DB PSQL port
+crdb_sql_port: 26257
+crdb_rpc_port: 26357
 
 # https://www.cockroachlabs.com/docs/stable/cluster-settings.html
 # value: 'any', 'local', 'off'
@@ -57,3 +56,6 @@ workload_url: https://edge-binaries.cockroachdb.com/cockroach/workload.LATEST
 
 # workload executable
 workload_executable: /usr/local/bin/workload
+
+# SSH Port
+ssh_port: 22
