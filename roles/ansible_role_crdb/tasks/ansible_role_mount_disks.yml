@@ -25,7 +25,7 @@
     device: "{{ item }}"
     number: 1
     state: present
-  when: "{{item}}1" not in mounted_disks
+  when: item not in mounted_disks
   loop: "{{ disks }}"
 
 - name: create filesystem
@@ -33,7 +33,7 @@
     fstype: "{{ data_filesystem }}"
     dev: "{{ item }}1"
     force: true
-  when: "{{item}}1" not in mounted_disks
+  when: item not in mounted_disks
   loop: "{{ disks }}"
 
 - name: mount data volumes
@@ -43,7 +43,7 @@
     opts: defaults
     state: mounted
     fstype: "{{ data_filesystem }}"
-  when: "{{item}}1" not in mounted_disks
+  when: item not in mounted_disks
   loop: "{{ vars.disks }}"
   loop_control:
     index_var: my_index
