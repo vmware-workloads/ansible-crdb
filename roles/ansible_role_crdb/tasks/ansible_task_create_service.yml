@@ -13,7 +13,7 @@
 
 - name: set bootstrap servers
   ansible.builtin.set_fact:
-    bootstrap: play_hosts[:3]
+    bootstrap: "{{ play_hosts[:3] }}"
 
 - name: create cockroachdb.service
   ansible.builtin.template:
