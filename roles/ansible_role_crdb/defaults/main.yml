@@ -3,7 +3,7 @@
 crdb_default_use_hosts_file: true
 
 # Data disk properties
-crdb_default_data_filesystem: ext4
+crdb_default_data_filesystem: xfs
 
 # SSL
 crdb_default_use_ssl: true

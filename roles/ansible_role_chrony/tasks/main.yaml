@@ -8,7 +8,7 @@
 
 - name: Fail if the ptp device does not exist
   ansible.builtin.fail:
-    msg: "PTP device does not exist: {{ ptp_device }"
+    msg: "PTP device does not exist: {{ ptp_device }}"
   when: not stat_st.stat.exists
 
 - name: install and configure chrony (Debian/Ubuntu)
