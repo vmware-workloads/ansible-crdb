@@ -32,7 +32,7 @@
   loop: "{{ disks }}"
 
 - name: wipe filesystem
-  wipefs -a "{{ item }}1"
+  command: wipefs -a "{{ item }}1"
   when: item not in mounted_disks
   loop: "{{ disks }}" 
 
