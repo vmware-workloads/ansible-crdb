@@ -22,6 +22,7 @@
 
 - name: initialize the database
   ansible.builtin.shell:
+    timeout: 30
     cmd: >
       cockroach init 
       {{ use_ssl | ternary(crdb_secure_flag, crdb_insecure_flag) }}

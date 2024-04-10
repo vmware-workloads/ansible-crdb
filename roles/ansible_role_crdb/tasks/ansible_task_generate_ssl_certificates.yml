@@ -72,7 +72,7 @@
       {{ hostvars[item]['ansible_host'] }}
       localhost
       127.0.0.1
-      {{ crdb_lb_items | join(' ') }}
+      {{ lb_addresses | join(' ') }}
       --certs-dir=certs/{{ item }}
       --ca-key=my-safe-directory/ca.key
   with_items: "{{ play_hosts }}"
