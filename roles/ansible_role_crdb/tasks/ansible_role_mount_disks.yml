@@ -57,8 +57,7 @@
 
 - name: get data volumes
   ansible.builtin.set_fact:
-    crdb_data_disks: "{{ ansible_mounts | json_query('[].mount') | map('regex_search', '/var/lib/cockroach/data[0-9]*') | select('string') | list }}"
-  when: crdb_data_disks | length < 1
+    crdb_data_disks: "{{ ansible_mounts | json_query('[].mount') | map('regex_search', '/var/lib/cockroach/data[0-9]+') | select('string') | list }}"
 
 - name: list data volumes
   ansible.builtin.debug:
