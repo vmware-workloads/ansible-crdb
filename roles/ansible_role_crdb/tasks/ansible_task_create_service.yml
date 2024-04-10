@@ -9,7 +9,7 @@
 
 - name: set data disk variable
   ansible.builtin.set_fact:
-    data_disks: output.files | default([])
+    data_disks: "{{ output.files | default([]) }}"
 
 - name: set bootstrap servers
   ansible.builtin.set_fact:
