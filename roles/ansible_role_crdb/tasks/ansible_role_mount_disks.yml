@@ -5,7 +5,7 @@
 
 - name: get disks (/dev/sd*) except sda (OS)
   ansible.builtin.set_fact:
-    unused_disks: "{{ ansible_devices.keys() | map('regex_search', 'sd([b-z]+|[a-z]{2})') | selectattr('partition', 'equalto', {}) | list | sort }}"
+    unused_disks: "{{ ansible_devices.keys() | selectattr('partition', 'equalto', {}) | list | sort }}"
 
 - name: list disks
   ansible.builtin.debug:
