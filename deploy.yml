@@ -45,5 +45,7 @@
     #crdb_data_filesystem: ext4
     #crdb_use_hosts_file: true
     #crdb_use_ssl: true
+    #crdb_lb_ips: []
+    #crdb_lb_hostnames: []
   roles:
     - ansible_role_crdb

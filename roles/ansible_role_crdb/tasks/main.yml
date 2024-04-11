@@ -11,12 +11,23 @@
 
 - name: print parameters
   ansible.builtin.debug:
-    msg: |
-      use_hosts_file: {{ use_hosts_file }}
-      use_ssl: {{ use_ssl }}
-      data_filesystem: {{ data_filesystem }}
-      lb_ips: {{ lb_ips }}
-      lb_hostnames: {{ lb_hostnames }}
+    msg: "use_hosts_file: {{ use_hosts_file }}"
+
+- name: print parameters
+  ansible.builtin.debug:
+    msg: "use_ssl: {{ use_ssl }}"
+
+- name: print parameters
+  ansible.builtin.debug:
+    msg: "data_filesystem: {{ data_filesystem }}"
+
+- name: print parameters
+  ansible.builtin.debug:
+    msg: "lb_ips: {{ lb_ips }}"
+
+- name: print parameters
+  ansible.builtin.debug:
+    msg: "lb_hostnames: {{ lb_hostnames }}"
 
 #- name: generate hosts file
 #  ansible.builtin.include_tasks: ansible_task_create_hosts_file.yml
