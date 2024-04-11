@@ -6,38 +6,45 @@
     use_hosts_file: (crdb_use_hosts_file | default(crdb_default_use_hosts_file)) | bool
     use_ssl: (crdb_use_ssl | default(crdb_default_use_ssl)) | bool
     data_filesystem: "{{ crdb_data_filesystem | default(crdb_default_data_filesystem) }}"
+    lb_ips: "{{ crdb_lb_ips | default(crdb_default_lb_ips) }}"
+    lb_hostnames: "{{ crdb_lb_hostnames | default(crdb_default_lb_hostnames) }}"
 
-- name: print filesystem
+- name: print parameters
   ansible.builtin.debug:
-    msg: "filesystem: '{{ data_filesystem}}'"
+    msg: |
+      use_hosts_file: {{ use_hosts_file }}
+      use_ssl: {{ use_ssl }}
+      data_filesystem: {{ data_filesystem }}
+      lb_ips: {{ lb_ips }}
+      lb_hostnames: {{ lb_hostnames }}
 
-- name: generate hosts file
-  ansible.builtin.include_tasks: ansible_task_create_hosts_file.yml
-  when: use_hosts_file
-
-- name: configure os parameters
-  ansible.builtin.include_tasks: ansible_task_configure_os.yml
-
-- name: configure firewall
-  ansible.builtin.include_tasks: ansible_task_configure_firewall.yml
-
-- name: install cockroach executable
-  ansible.builtin.include_tasks: ansible_task_install_cockroach_executable.yml
+#- name: generate hosts file
+#  ansible.builtin.include_tasks: ansible_task_create_hosts_file.yml
+#  when: use_hosts_file
+#
+#- name: configure os parameters
+#  ansible.builtin.include_tasks: ansible_task_configure_os.yml
+#
+#- name: configure firewall
+#  ansible.builtin.include_tasks: ansible_task_configure_firewall.yml
+#
+#- name: install cockroach executable
+#  ansible.builtin.include_tasks: ansible_task_install_cockroach_executable.yml
 
 - name: partition and mount disks
   ansible.builtin.include_tasks: ansible_role_mount_disks.yml
 
-- name: generate SSL certificates
-  ansible.builtin.include_tasks: ansible_task_generate_ssl_certificates.yml
-  when: use_ssl
-
-- name: create systemd service
-  ansible.builtin.include_tasks: ansible_task_create_service.yml
-
-- name: start service on first node and initialize the cluster
-  ansible.builtin.include_tasks: ansible_task_start_cluster_first_node.yml
-  when: inventory_hostname == play_hosts[0]
-
-- name: start service on remaining nodes
-  ansible.builtin.include_tasks: ansible_task_start_cluster_other_nodes.yml
-  when: inventory_hostname in play_hosts[1:]
+#- name: generate SSL certificates
+#  ansible.builtin.include_tasks: ansible_task_generate_ssl_certificates.yml
+#  when: use_ssl
+#
+#- name: create systemd service
+#  ansible.builtin.include_tasks: ansible_task_create_service.yml
+#
+#- name: start service on first node and initialize the cluster
+#  ansible.builtin.include_tasks: ansible_task_start_cluster_first_node.yml
+#  when: inventory_hostname == play_hosts[0]
+#
+#- name: start service on remaining nodes
+#  ansible.builtin.include_tasks: ansible_task_start_cluster_other_nodes.yml
+#  when: inventory_hostname in play_hosts[1:]

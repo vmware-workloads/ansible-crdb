@@ -10,6 +10,10 @@ crdb_default_use_ssl: true
 crdb_secure_flag: --certs-dir=/var/lib/cockroach/certs
 crdb_insecure_flag: --insecure
 
+# Load Balancer
+crdb_default_lb_ips: []
+crdb_default_lb_hostnames: []
+
 # URL for downloading the cockroach binary
 # ref. https://www.cockroachlabs.com/docs/releases/
 crdb_url: https://binaries.cockroachdb.com/cockroach-v23.2.2.linux-amd64.tgz
