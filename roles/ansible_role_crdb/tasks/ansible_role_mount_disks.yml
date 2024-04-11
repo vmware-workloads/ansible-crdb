@@ -4,13 +4,24 @@
       - hardware
 
 - name: Gather the list of mounted devices
-  ansible.builtin.shell: lsblk --list --noheadings --output MOUNTPOINT,NAME | awk '/^\//{print $2}'
+  ansible.builtin.shell:
+    cmd: |
+      lsblk --list --noheadings --output MOUNTPOINT,NAME 
+      | awk '/^\//{print $2}'
+      | awk '/^sd/{print $1}'
+      | awk '{sub(/[0-9]+/, "", $(NF-1)); print }'
+      | uniq
   register: mounted_devices
   changed_when: False
 
 
 - name: Gather the list of all devices
-  ansible.builtin.shell: lsblk --list --noheadings --output NAME | awk '/^sd/{print $1}'
+  ansible.builtin.shell:
+    cmd: |
+      lsblk --list --noheadings --output NAME 
+      | awk '/^sd/{print $1}' 
+      | awk '{sub(/[0-9]+/, "", $(NF-1)); print }'
+      | uniq
   register: all_devices
   changed_when: False
 
@@ -20,11 +31,11 @@
 
 - name: debug
   ansible.builtin.debug:
-    var: mounted_devices
+    var: mounted_devices.stdout_lines
 
 - name: debug
   ansible.builtin.debug:
-    var: all_devices
+    var: all_devices.stdout_lines
 
 - name: debug
   ansible.builtin.debug:
