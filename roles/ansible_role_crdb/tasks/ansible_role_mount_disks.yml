@@ -3,18 +3,37 @@
     gather_subset:
       - hardware
 
-- name: get disks (/dev/sd*) except sda (OS)
-  ansible.builtin.set_fact:
-    unused_disks: "{{ ansible_devices.keys() | selectattr('partition', 'equalto', {}) | list | sort }}"
+- name: Gather the list of mounted devices
+  ansible.builtin.shell: lsblk --list --noheadings --output MOUNTPOINT,NAME | awk '/^\//{print $2}'
+  register: mounted_devices
+  changed_when: False
 
-- name: list disks
+
+- name: Gather the list of all devices
+  ansible.builtin.shell: lsblk --list --noheadings --output NAME | awk '/^sd/{print $1}'
+  register: all_devices
+  changed_when: False
+
+- name: Calculate the unused devices
+  set_fact:
+    unused_devices: "{{ all_devices.stdout_lines | difference(mounted_devices.stdout_lines) }}"
+
+- name: debug
   ansible.builtin.debug:
-    var: unused_disks
+    var: mounted_devices
+
+- name: debug
+  ansible.builtin.debug:
+    var: all_devices
+
+- name: debug
+  ansible.builtin.debug:
+    var: unused_devices
 
 - name: fail it
   ansible.builtin.fail:
 
-
+###
 - name: get disks (/dev/sd*) except sda (OS)
   ansible.builtin.set_fact:
     disks: "{{ disks | default([]) + [ '/dev/' ~ item ] }}"
