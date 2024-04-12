@@ -26,7 +26,7 @@
 
 - name: Calculate the unused devices
   set_fact:
-    unused_disks: "{{ all_devices.stdout_lines | difference(mounted_devices.stdout_lines) }}"
+    unused_disks: "{{ all_disks.stdout_lines | difference(mounted_disks.stdout_lines) }}"
 
 - name: debug
   ansible.builtin.debug:
