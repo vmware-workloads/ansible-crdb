@@ -1,0 +1,48 @@
+#
+# Ref. https://www.cockroachlabs.com/docs/stable/deploy-cockroachdb-on-premises
+#
+- name: set variables
+  ansible.builtin.set_fact:
+    certs_folder: certs
+    safe_folder: my-safe-directory
+    ca_crt: ca.crt
+    ca_key: ca.key
+
+    crdb_lb_items: "{{ ( crdb_lb_ip | default([]) ) + ( crdb_lb_hostnames | default([]) ) }}"
+
+- name: set loop variables
+  ansible.builtin.set_fact:
+    cert_folders:
+      - "{{ certs_folder }}"
+      - "{{ safe_folder }}"
+
+- name: "create base directory '{{ crdb_folder }}' if it does not exist"
+  ansible.builtin.file:
+    path: "{{ crdb_folder }}"
+    state: directory
+    mode: "0755"
+
+- name: create certificate directories if they do not exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop: cert_folders
+
+- name: check if ca.crt exists
+  ansible.builtin.stat:
+    path: "{{ crdb_folder }}/{{ certs_folder }}/{{ ca_crt }}"
+  register: ca_crt_stat
+
+- name: check if ca.key exists
+  ansible.builtin.stat:
+    path: "{{ crdb_folder }}/{{ safe_folder }}/{{ ca_key }}"
+  register: ca_key_stat
+
+- name: check if root certificate needs to be generated
+  ansible.builtin.set_fact:
+    generate_ca_certs: "{{ not (ca_crt_stat.stat.exists and ca_key_stat.stat.exists) }}"
+
+- name: debug
+  ansible.builtin.debug:
+    var: generate_ca_certs

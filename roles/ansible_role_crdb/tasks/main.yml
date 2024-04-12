@@ -29,26 +29,26 @@
   ansible.builtin.debug:
     msg: "lb_hostnames: {{ lb_hostnames }}"
 
-#- name: generate hosts file
-#  ansible.builtin.include_tasks: ansible_task_create_hosts_file.yml
-#  when: use_hosts_file
-#
-#- name: configure os parameters
-#  ansible.builtin.include_tasks: ansible_task_configure_os.yml
-#
-#- name: configure firewall
-#  ansible.builtin.include_tasks: ansible_task_configure_firewall.yml
-#
-#- name: install cockroach executable
-#  ansible.builtin.include_tasks: ansible_task_install_cockroach_executable.yml
+- name: generate hosts file
+  ansible.builtin.include_tasks: ansible_task_create_hosts_file.yml
+  when: use_hosts_file
+
+- name: configure os parameters
+  ansible.builtin.include_tasks: ansible_task_configure_os.yml
+
+- name: configure firewall
+  ansible.builtin.include_tasks: ansible_task_configure_firewall.yml
+
+- name: install cockroach executable
+  ansible.builtin.include_tasks: ansible_task_install_cockroach_executable.yml
 
 - name: partition and mount disks
   ansible.builtin.include_tasks: ansible_role_mount_disks.yml
 
-#- name: generate SSL certificates
-#  ansible.builtin.include_tasks: ansible_task_generate_ssl_certificates.yml
-#  when: use_ssl
-#
+- name: generate SSL certificates
+  ansible.builtin.include_tasks: ansible_task_generate_root_ssl_certificate.yml
+  when: use_ssl
+
 #- name: create systemd service
 #  ansible.builtin.include_tasks: ansible_task_create_service.yml
 #

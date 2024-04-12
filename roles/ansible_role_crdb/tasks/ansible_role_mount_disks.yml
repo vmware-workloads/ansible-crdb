@@ -80,7 +80,4 @@
 
 - name: list mounted data disks
   ansible.builtin.debug:
-    msg: "data disks: {{ crdb_data_disks }}"
-
-- name: fail
-  ansible.builtin.fail:
+    var: "{{ crdb_data_disks }}"
