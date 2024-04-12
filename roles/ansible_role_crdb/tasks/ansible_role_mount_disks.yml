@@ -11,9 +11,8 @@
       | awk '/^sd/{print $1}'
       | awk '{sub(/[0-9]+/, "", $(NF-1)); print }'
       | uniq
-  register: mounted_devices
+  register: mounted_disks
   changed_when: False
-
 
 - name: Gather the list of all devices
   ansible.builtin.shell:
@@ -22,80 +21,57 @@
       | awk '/^sd/{print $1}' 
       | awk '{sub(/[0-9]+/, "", $(NF-1)); print }'
       | uniq
-  register: all_devices
+  register: all_disks
   changed_when: False
 
 - name: Calculate the unused devices
   set_fact:
-    unused_devices: "{{ all_devices.stdout_lines | difference(mounted_devices.stdout_lines) }}"
+    unused_disks: "{{ all_devices.stdout_lines | difference(mounted_devices.stdout_lines) }}"
 
 - name: debug
   ansible.builtin.debug:
-    var: mounted_devices.stdout_lines
+    var: mounted_disks.stdout_lines
 
 - name: debug
   ansible.builtin.debug:
-    var: all_devices.stdout_lines
+    var: all_disks.stdout_lines
 
 - name: debug
   ansible.builtin.debug:
-    var: unused_devices
-
-- name: fail it
-  ansible.builtin.fail:
-
-###
-- name: get disks (/dev/sd*) except sda (OS)
-  ansible.builtin.set_fact:
-    disks: "{{ disks | default([]) + [ '/dev/' ~ item ] }}"
-  loop: "{{ hostvars[inventory_hostname].ansible_devices.keys() | map('regex_search', 'sd([b-z]+|[a-z]{2})') | select('string') | list | sort }}"
-
-
-
-- name: get mounted devices
-  ansible.builtin.set_fact:
-    mounted_disks: "{{ ansible_mounts|json_query('[].device') }}"
-
-- name: list mounted disks
-  ansible.builtin.debug:
-    var: mounted_disks
+    var: unused_disks
 
 - name: partition disks
   community.general.parted:
-    device: "{{ item }}"
+    device: "/dev/{{ item }}"
     number: 1
     state: present
     label: gpt
     name: data
     resize: true
-  when: item not in mounted_disks
-  loop: "{{ disks }}"
-
-- name: wipe filesystem
-  command: wipefs -a "{{ item }}1"
-  when: item not in mounted_disks
-  loop: "{{ disks }}" 
+  loop: "{{ unused_disks }}"
 
 - name: create filesystem
   community.general.filesystem:
     fstype: "{{ data_filesystem }}"
-    dev: "{{ item }}1"
-  when: item not in mounted_disks
-  loop: "{{ disks }}"
+    dev: "/dev/{{ item }}1"
+  loop: "{{ unused_disks }}"
 
 - name: mount data volumes
   ansible.posix.mount:
-    src: "{{ item }}1"
-    path: "/{{ crdb_folder }}/data{{ my_index }}"
+    src: "/dev/{{ item }}1"
+    path: "/{{ crdb_folder }}/data{{ index }}"
     opts: defaults
     state: mounted
     fstype: "{{ data_filesystem }}"
-  when: item not in mounted_disks
-  loop: "{{ vars.disks }}"
+  loop: "{{ unused_disks }}"
   loop_control:
-    index_var: my_index
+    index_var: index
+
+- name: fail]
+  ansible.builtin.fail:
 
 - name: get data volumes
   ansible.builtin.set_fact:
     crdb_data_disks: "{{ ansible_mounts | json_query('[].mount') | map('regex_search', '/var/lib/cockroach/data[0-9]+') | select('string') | list }}"
+
 
