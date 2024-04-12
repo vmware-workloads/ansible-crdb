@@ -46,6 +46,9 @@
   ansible.builtin.set_fact:
     generate_ca_certs: "{{ (not (ca_crt_stat.stat.exists and ca_key_stat.stat.exists)) | bool }}"
 
+- set_fact:
+    generate_ca_certs: true
+
 - name: debug
   ansible.builtin.debug:
     var: generate_ca_certs
