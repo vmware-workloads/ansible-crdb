@@ -54,14 +54,14 @@
 - name: "copy {{ ca_crt }} from node 0 to local machine"
   ansible.builtin.copy:
     src: "{{ crdb_folder }}/{{ certs_folder }}/{{ ca_crt }}"
-    dest: "./{{ ca_crt }}"
+    dest: "{{ ca_crt }}"
     remote_src: true
   when: generate_ca_certs and (inventory_hostname == play_hosts[0])
 
 - name: "copy {{ ca_key }} from node 0 to to local machine"
   ansible.builtin.copy:
     src: "{{ crdb_folder }}/{{ safe_folder }}/{{ ca_key }}"
-    dest: "./{{ ca_key }}"
+    dest: "{{ ca_key }}"
     remote_src: true
   when: generate_ca_certs and (inventory_hostname == play_hosts[0])
 
