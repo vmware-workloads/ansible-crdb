@@ -67,9 +67,9 @@
 
 - name: "copy {{ ca_crt }} from node 0 to local machine"
   ansible.builtin.copy:
-    src: "{{ crdb_folder }}/{{ certs_folder }}/{{ ca_crt }}"
-    dest: "tmp_certs/{{ ca_crt }}"
     remote_src: true
+    src: "{{ crdb_folder }}/{{ certs_folder }}/{{ ca_crt }}"
+    dest: .
   when:
     - generate_ca_certs
     - inventory_hostname == play_hosts[0]
@@ -77,7 +77,7 @@
 - name: "copy {{ ca_key }} from node 0 to to local machine"
   ansible.builtin.copy:
     src: "{{ crdb_folder }}/{{ safe_folder }}/{{ ca_key }}"
-    dest: "tmp_certs/{{ ca_key }}"
+    dest: .
     remote_src: true
   when:
     - generate_ca_certs
@@ -86,7 +86,7 @@
 - name: "copy {{ ca_crt }} to other nodes"
   ansible.builtin.copy:
     src: "tmp_certs/{{ ca_crt }}"
-    dest: "{{ crdb_folder }}/{{ certs_folder }}/{{ ca_crt }}"
+    dest: "{{ crdb_folder }}/{{ certs_folder }}/"
     force: true
   when:
     - generate_ca_certs
@@ -95,7 +95,7 @@
 - name: "copy {{ ca_key }} to other nodes"
   ansible.builtin.copy:
     src: "tmp_certs/{{ ca_key }}"
-    dest: "{{ crdb_folder }}/{{ safe_folder }}/{{ ca_key }}"
+    dest: "{{ crdb_folder }}/{{ safe_folder }}/"
     force: true
   when:
     - generate_ca_certs
