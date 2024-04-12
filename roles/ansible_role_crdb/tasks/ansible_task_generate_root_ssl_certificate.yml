@@ -85,7 +85,7 @@
 
 - name: "copy {{ ca_crt }} to other nodes"
   ansible.builtin.copy:
-    src: "./{{ ca_crt }}"
+    src: "{{ ca_crt }}"
     dest: "{{ crdb_folder }}/{{ certs_folder }}/{{ ca_crt }}"
     force: true
   when:
@@ -94,7 +94,7 @@
 
 - name: "copy {{ ca_key }} to other nodes"
   ansible.builtin.copy:
-    src: "./{{ ca_key }}"
+    src: "{{ ca_key }}"
     dest: "{{ crdb_folder }}/{{ safe_folder }}/{{ ca_key }}"
     force: true
   when:
