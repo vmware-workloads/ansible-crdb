@@ -1,6 +1,10 @@
 #
 # Ref. https://www.cockroachlabs.com/docs/stable/deploy-cockroachdb-on-premises
 #
+- name: print inventory name
+  ansible.builtin.debug:
+    var: inventory_hostname
+
 - name: set variables
   ansible.builtin.set_fact:
     certs_folder: certs
@@ -49,7 +53,7 @@
       --certs-dir={{ crdb_folder }}/{{ certs_folder }}/ 
       --ca-key={{ crdb_folder }}/{{ safe_folder }}/{{ ca_key }}
       --overwrite
-  when: generate_ca_certs and (inventory_hostname == play_hosts[0])
+  when: generate_ca_certs
 
 - name: "copy {{ ca_crt }} from node 0 to local machine"
   ansible.builtin.copy:
