@@ -7,14 +7,7 @@
     safe_folder: my-safe-directory
     ca_crt: ca.crt
     ca_key: ca.key
-
     crdb_lb_items: "{{ ( crdb_lb_ip | default([]) ) + ( crdb_lb_hostnames | default([]) ) }}"
-
-- name: set loop variables
-  ansible.builtin.set_fact:
-    cert_folders:
-      - "{{ certs_folder }}"
-      - "{{ safe_folder }}"
 
 - name: "create base directory '{{ crdb_folder }}' if it does not exist"
   ansible.builtin.file:
@@ -27,7 +20,9 @@
     path: "{{ item }}"
     state: directory
     mode: "0755"
-  loop: cert_folders
+  loop:
+    - "{{ certs_folder }}"
+    - "{{ safe_folder }}"
 
 - name: check if ca.crt exists
   ansible.builtin.stat:
