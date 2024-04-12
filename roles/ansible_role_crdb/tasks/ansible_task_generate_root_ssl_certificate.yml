@@ -17,7 +17,7 @@
 
 - name: create certificate directories if they do not exist
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: "{{ crdb_folder }}/{{ item }}"
     state: directory
     mode: "0755"
   loop:
