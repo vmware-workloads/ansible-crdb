@@ -39,8 +39,8 @@
 - name: configure firewall
   ansible.builtin.include_tasks: ansible_task_configure_firewall.yml
 
-- name: install cockroach executable
-  ansible.builtin.include_tasks: ansible_task_install_cockroach_executable.yml
+#- name: install cockroach executable
+#  ansible.builtin.include_tasks: ansible_task_install_cockroach_executable.yml
 
 - name: partition and mount disks
   ansible.builtin.include_tasks: ansible_role_mount_disks.yml
