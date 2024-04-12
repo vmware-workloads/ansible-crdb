@@ -59,7 +59,7 @@
 - name: mount data volumes
   ansible.posix.mount:
     src: "/dev/{{ item }}1"
-    path: "/{{ crdb_folder }}/data{{ index }}"
+    path: "{{ crdb_folder }}/data{{ index }}"
     opts: defaults
     state: mounted
     fstype: "{{ data_filesystem }}"
@@ -67,11 +67,20 @@
   loop_control:
     index_var: index
 
-- name: fail]
-  ansible.builtin.fail:
-
 - name: get data volumes
+  ansible.builtin.shell:
+    cmd: >
+      lsblk --list --noheadings --output MOUNTPOINT
+      | grep -i {{ crdb_folder }}
+  register: mounted_data_disks
+
+- name: set data disk variable
   ansible.builtin.set_fact:
-    crdb_data_disks: "{{ ansible_mounts | json_query('[].mount') | map('regex_search', '/var/lib/cockroach/data[0-9]+') | select('string') | list }}"
+    crdb_data_disks: "{{ mounted_data_disks.stdout }}"
 
+- name: list mounted data disks
+  ansible.builtin.debug:
+    msg: "data disks: {{ crdb_data_disks }}"
 
+- name: fail
+  ansible.builtin.fail:
