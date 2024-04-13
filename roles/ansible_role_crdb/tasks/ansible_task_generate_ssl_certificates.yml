@@ -10,7 +10,7 @@
       - ca.crt
       - node.crt
       - node.key
-    crdb_lb_items: "{{ ( crdb_lb_ip | default([]) ) + ( crdb_lb_hostnames | default([]) ) }}"
+    crdb_lb_items: "{{ ( crdb_lb_ips | default([]) ) + ( crdb_lb_hostnames | default([]) ) }}"
 
 - name: delete local certificate folder on ansible host
   local_action: file path=certificates state=absent

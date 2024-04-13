@@ -15,7 +15,7 @@
     safe_folder: my-safe-directory
     ca_crt: ca.crt
     ca_key: ca.key
-    crdb_lb_items: "{{ ( crdb_lb_ip | default([]) ) + ( crdb_lb_hostnames | default([]) ) }}"
+    crdb_lb_items: "{{ ( crdb_lb_ips | default([]) ) + ( crdb_lb_hostnames | default([]) ) }}"
 
 - name: "create base directory '{{ crdb_folder }}' if it does not exist"
   ansible.builtin.file:
@@ -99,7 +99,7 @@
       {{ ansible_host }}
       localhost
       127.0.0.1
-      {{ lb_addresses | join(' ') }}
+      {{ crdb_lb_items | join(' ') }}
       --certs-dir=certs/{{ item }}
       --ca-key=my-safe-directory/ca.key
       --overwrite
