@@ -94,9 +94,9 @@
   ansible.builtin.shell:
     cmd: >
       cockroach cert create-node 
-      {{ hostvars[item]['ansible_fqdn'] }}
-      {{ hostvars[item]['ansible_hostname'] }}
-      {{ hostvars[item]['ansible_host'] }}
+      {{ ansible_fqdn }}
+      {{ ansible_hostname }}
+      {{ ansible_host }}
       localhost
       127.0.0.1
       {{ lb_addresses | join(' ') }}
