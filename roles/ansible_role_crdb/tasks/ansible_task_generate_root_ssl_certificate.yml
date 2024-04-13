@@ -78,20 +78,15 @@
     - generate_ca_certs
     - inventory_hostname == play_hosts[0]
 
-- name: "copy {{ ca_crt }} to other nodes"
-  ansible.builtin.copy:
-    src: "certificates/{{ certs_folder }}/{{ ca_crt }}"
-    dest: "{{ crdb_folder }}/{{ certs_folder }}/"
-    force: true
-  when:
-    - generate_ca_certs
-    - inventory_hostname != play_hosts[0]
-
-- name: "copy {{ ca_key }} to other nodes"
-  ansible.builtin.copy:
-    src: "certificates/{{ safe_folder }}/{{ ca_key }}"
-    dest: "{{ crdb_folder }}/{{ safe_folder }}/"
-    force: true
+- name: synchronize ca certs on first node to localhost
+  ansible.posix.synchronize:
+    mode: pull
+    dirs: yes
+    src: "certificates/{{ item }}"
+    dest: "{{ item }}"
+  with_items:
+    - "{{ crdb_folder }}/{{ certs_folder }}/{{ ca_crt }}"
+    - "{{ crdb_folder }}/{{ safe_folder }}/{{ ca_key }}"
   when:
     - generate_ca_certs
     - inventory_hostname != play_hosts[0]
