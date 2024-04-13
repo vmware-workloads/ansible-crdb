@@ -100,8 +100,8 @@
       localhost
       127.0.0.1
       {{ crdb_lb_items | join(' ') }}
-      --certs-dir=certs/{{ item }}
-      --ca-key=my-safe-directory/ca.key
+      --certs-dir={{ certs_folder }}
+      --ca-key={{ safe_folder }}/ca.key
       --overwrite
   when:
     - generate_ca_certs
