@@ -101,7 +101,7 @@
       127.0.0.1
       {{ crdb_lb_items | join(' ') }}
       --certs-dir={{ certs_folder }}
-      --ca-key={{ safe_folder }}/ca.key
+      --ca-key={{ safe_folder }}/{{ ca_key }}
       --overwrite
   when:
     - generate_ca_certs
