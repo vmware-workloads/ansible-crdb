@@ -79,19 +79,17 @@
     remote_src: true
     src: "{{ crdb_folder }}/{{ safe_folder }}/{{ ca_key }}"
     dest: "certs/{{ ca_key }}"
+  register: foo
   when:
     - generate_ca_certs
     - inventory_hostname == play_hosts[0]
 
-- name: foo
-  shell:
-    cmd: ls -l
-  register: foo
-
 - name: foo debug
   debug:
     var: foo
-
+  when:
+    - generate_ca_certs
+    - inventory_hostname == play_hosts[0]
 
 - name: "copy '{{ ca_crt }}' to other hosts"
   ansible.builtin.copy:
