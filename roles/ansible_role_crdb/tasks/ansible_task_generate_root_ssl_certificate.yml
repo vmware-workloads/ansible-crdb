@@ -65,7 +65,7 @@
     - generate_ca_certs
     - inventory_hostname == play_hosts[0]
 
-- name: "copy '{{ ca_crt }}' to ansibel runner"
+- name: "copy '{{ ca_crt }}' to ansible runner"
   ansible.builtin.copy:
     remote_src: true
     src: "{{ crdb_folder }}/{{ certs_folder }}/{{ ca_crt }}"
@@ -74,7 +74,7 @@
     - generate_ca_certs
     - inventory_hostname == play_hosts[0]
 
-- name: "copy '{{ ca_crt }}' to ansibel runner"
+- name: "copy '{{ ca_key }}' to ansible runner"
   ansible.builtin.copy:
     remote_src: true
     src: "{{ crdb_folder }}/{{ safe_folder }}/{{ ca_key }}"
@@ -82,6 +82,24 @@
   when:
     - generate_ca_certs
     - inventory_hostname == play_hosts[0]
+
+- name: foo
+  shell:
+    cmd: ls -l
+  register: foo
+
+- name: foo debug
+  debug:
+    var: foo
+
+
+- name: "copy '{{ ca_crt }}' to other hosts"
+  ansible.builtin.copy:
+    src: "certs/{{ ca_crt }}"
+    dest: "{{ crdb_folder }}/{{ certs_folder }}/{{ ca_crt }}"
+  when:
+    - generate_ca_certs
+    - inventory_hostname != play_hosts[0]
 
 
 #- name: copy CA certificate to ansible host
