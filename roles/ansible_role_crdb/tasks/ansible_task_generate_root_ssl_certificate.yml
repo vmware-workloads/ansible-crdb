@@ -78,75 +78,30 @@
     - generate_ca_certs
     - inventory_hostname == play_hosts[0]
 
-- name: Copy file with owner and permissions
+- name: Copy CA cert and key with owner and permissions
   ansible.builtin.copy:
     src:  "certificates/"
     dest: "{{ crdb_folder }}"
     owner: "{{ crdb_service_user }}"
-    mode: '0600'
+    group: "{{ crdb_service_group }}"
+    mode: '0664'
+    force: true
   when:
     - generate_ca_certs
     - inventory_hostname != play_hosts[0]
 
-#- name: "copy '{{ ca_crt }}' to ansible runner"
-#  ansible.builtin.copy:
-#    remote_src: true
-#    src: "{{ crdb_folder }}/{{ certs_folder }}/{{ ca_crt }}"
-#    dest: /
-#  when:
-#    - generate_ca_certs
-#    - inventory_hostname == play_hosts[0]
-#
-#- name: "copy '{{ ca_key }}' to ansible runner"
-#  ansible.builtin.copy:
-#    remote_src: true
-#    src: "{{ crdb_folder }}/{{ safe_folder }}/{{ ca_key }}"
-#    dest: /
-#  register: foo
-#  when:
-#    - generate_ca_certs
-#    - inventory_hostname == play_hosts[0]
-#
-#- name: "copy '{{ ca_crt }}' to other hosts"
-#  ansible.builtin.copy:
-#    src: "/{{ ca_crt }}"
-#    dest: "{{ crdb_folder }}/{{ certs_folder }}/{{ ca_crt }}"
-#  when:
-#    - generate_ca_certs
-#    - inventory_hostname != play_hosts[0]
-
-
-#- name: copy CA certificate to ansible host
-#  ansible.builtin.copy:
-#    remote_src: true
-#    src: certs/ca.crt
-#    dest: "certs/{{ item }}/ca.crt"
-#  with_items: "{{ play_hosts }}"
-#  when: inventory_hostname == play_hosts[0]
-#
-#- name: synchronize ca certs on first node to localhost
-#  ansible.posix.synchronize:
-#    mode: pull
-#    dirs: yes
-#    src: "{{ item }}"
-#    dest: "certificates"
-#  with_items:
-#    - "{{ crdb_folder }}/{{ certs_folder }}/{{ ca_crt }}"
-#    - "{{ crdb_folder }}/{{ safe_folder }}/{{ ca_key }}"
-#  when:
-#    - generate_ca_certs
-#    - inventory_hostname == play_hosts[0]
-#
-#- name: synchronize ca certs on first node to localhost
-#  ansible.posix.synchronize:
-#    mode: pull
-#    dirs: yes
-#    src: "certificates/{{ item }}"
-#    dest: "{{ item }}"
-#  with_items:
-#    - "{{ crdb_folder }}/{{ certs_folder }}/{{ ca_crt }}"
-#    - "{{ crdb_folder }}/{{ safe_folder }}/{{ ca_key }}"
-#  when:
-#    - generate_ca_certs
-#    - inventory_hostname != play_hosts[0]
-#
+- name: generate crdb node certificates
+  ansible.builtin.shell:
+    cmd: >
+      cockroach cert create-node 
+      {{ hostvars[item]['ansible_fqdn'] }}
+      {{ hostvars[item]['ansible_hostname'] }}
+      {{ hostvars[item]['ansible_host'] }}
+      localhost
+      127.0.0.1
+      {{ lb_addresses | join(' ') }}
+      --certs-dir=certs/{{ item }}
+      --ca-key=my-safe-directory/ca.key
+      --overwrite
+  when:
+    - generate_ca_certs
