@@ -15,6 +15,8 @@
     safe_folder: my-safe-directory
     ca_crt: ca.crt
     ca_key: ca.key
+    node_crt: node.crt
+    node_key: node.key
     crdb_lb_items: "{{ ( crdb_lb_ips | default([]) ) + ( crdb_lb_hostnames | default([]) ) }}"
 
 - name: "create base directory '{{ crdb_folder }}' if it does not exist"
@@ -90,6 +92,20 @@
     - generate_ca_certs
     - inventory_hostname != play_hosts[0]
 
+- name: "check if {{ node_crt }} exists"
+  ansible.builtin.stat:
+    path: "{{ crdb_folder }}/{{ certs_folder }}/{{ node_crt }}"
+  register: node_crt_stat
+
+- name: "check if {{ node_key }} exists"
+  ansible.builtin.stat:
+    path: "{{ crdb_folder }}/{{ safe_folder }}/{{ node_key }}"
+  register: node_key_stat
+
+- name: check if node certificate needs to be generated
+  ansible.builtin.set_fact:
+    generate_node_certs: "{{ (not (node_crt_stat.stat.exists and node_key_stat.stat.exists)) | bool }}"
+
 - name: generate crdb node certificates
   ansible.builtin.shell:
     cmd: >
@@ -104,4 +120,13 @@
       --ca-key={{ crdb_folder }}/{{ safe_folder }}/{{ ca_key }}
       --overwrite
   when:
-    - generate_ca_certs
+    - generate_node_certs
+
+- name: generate cockroach 'root' user certificate
+  ansible.builtin.shell:
+    cmd: >
+      cockroach cert create-client 
+      root
+      --certs-dir=certs/{{ item }}
+      --ca-key=my-safe-directory/ca.key
+  with_items: "{{ play_hosts }}"
