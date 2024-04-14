@@ -129,4 +129,4 @@
       root
       --certs-dir=certs/{{ item }}
       --ca-key=my-safe-directory/ca.key
-  with_items: "{{ play_hosts }}"
+      --overwrite
