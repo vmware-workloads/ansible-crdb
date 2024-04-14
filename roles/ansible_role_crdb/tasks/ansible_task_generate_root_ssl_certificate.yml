@@ -127,6 +127,6 @@
     cmd: >
       cockroach cert create-client 
       root
-      --certs-dir=certs/{{ item }}
-      --ca-key=my-safe-directory/ca.key
+      --certs-dir={{ crdb_folder }}/{{ certs_folder }}
+      --ca-key={{ crdb_folder }}/{{ safe_folder }}/{{ ca_key }}
       --overwrite
