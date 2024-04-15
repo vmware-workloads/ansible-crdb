@@ -154,4 +154,4 @@
       --overwrite
   when:
     - inventory_hostname == play_hosts[0]
-    - generate_client_certs
+    - generate_client_certs is defined and generate_client_certs
