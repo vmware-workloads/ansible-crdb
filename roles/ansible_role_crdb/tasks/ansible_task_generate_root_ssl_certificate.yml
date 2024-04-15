@@ -153,5 +153,5 @@
       --ca-key={{ crdb_folder }}/{{ safe_folder }}/{{ ca_key }}
       --overwrite
   when:
-    - generate_client_certs
     - inventory_hostname == play_hosts[0]
+    - generate_client_certs
