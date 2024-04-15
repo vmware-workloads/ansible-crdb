@@ -123,8 +123,6 @@
       --overwrite
   when:
     - generate_node_certs
-  notify:
-    - restart_cockroach_service
 
 - name: "check if {{ client_root_crt }} exists"
   ansible.builtin.stat:

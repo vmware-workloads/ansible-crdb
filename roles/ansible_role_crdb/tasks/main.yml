@@ -39,8 +39,8 @@
 - name: configure firewall
   ansible.builtin.include_tasks: ansible_task_configure_firewall.yml
 
-#- name: install cockroach executable
-#  ansible.builtin.include_tasks: ansible_task_install_cockroach_executable.yml
+- name: install cockroach executable
+  ansible.builtin.include_tasks: ansible_task_install_cockroach_executable.yml
 
 - name: partition and mount disks
   ansible.builtin.include_tasks: ansible_role_mount_disks.yml
@@ -49,13 +49,13 @@
   ansible.builtin.include_tasks: ansible_task_generate_root_ssl_certificate.yml
   when: use_ssl
 
-#- name: create systemd service
-#  ansible.builtin.include_tasks: ansible_task_create_service.yml
-#
-#- name: start service on first node and initialize the cluster
-#  ansible.builtin.include_tasks: ansible_task_start_cluster_first_node.yml
-#  when: inventory_hostname == play_hosts[0]
-#
-#- name: start service on remaining nodes
-#  ansible.builtin.include_tasks: ansible_task_start_cluster_other_nodes.yml
-#  when: inventory_hostname in play_hosts[1:]
+- name: create systemd service
+  ansible.builtin.include_tasks: ansible_task_create_service.yml
+
+- name: start service on first node and initialize the cluster
+  ansible.builtin.include_tasks: ansible_task_start_cluster_first_node.yml
+  when: inventory_hostname == play_hosts[0]
+
+- name: start service on remaining nodes
+  ansible.builtin.include_tasks: ansible_task_start_cluster_other_nodes.yml
+  when: inventory_hostname in play_hosts[1:]
