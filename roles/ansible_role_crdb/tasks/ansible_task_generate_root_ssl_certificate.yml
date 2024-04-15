@@ -17,6 +17,8 @@
     ca_key: ca.key
     node_crt: node.crt
     node_key: node.key
+    client_root_crt: client.root.crt
+    client_root_key: client.root.key
     crdb_lb_items: "{{ ( crdb_lb_ips | default([]) ) + ( crdb_lb_hostnames | default([]) ) }}"
 
 - name: "create base directory '{{ crdb_folder }}' if it does not exist"
@@ -122,6 +124,26 @@
   when:
     - generate_node_certs
 
+- name: "check if {{ client_root_crt }} exists"
+  ansible.builtin.stat:
+    path: "{{ crdb_folder }}/{{ certs_folder }}/{{ client_root_crt }}"
+  register: client_crt_stat
+  when:
+    - inventory_hostname != play_hosts[0]
+
+- name: "check if {{ client_root_key }} exists"
+  ansible.builtin.stat:
+    path: "{{ crdb_folder }}/{{ safe_folder }}/{{ client_root_key }}"
+  register: client_key_stat
+  when:
+    - inventory_hostname != play_hosts[0]
+
+- name: check if node certificate needs to be generated
+  ansible.builtin.set_fact:
+    generate_client_certs: "{{ (not (client_crt_stat.stat.exists and client_key_stat.stat.exists)) | bool }}"
+  when:
+    - inventory_hostname != play_hosts[0]
+
 - name: generate cockroach 'root' user certificate
   ansible.builtin.shell:
     cmd: >
@@ -130,3 +152,6 @@
       --certs-dir={{ crdb_folder }}/{{ certs_folder }}
       --ca-key={{ crdb_folder }}/{{ safe_folder }}/{{ ca_key }}
       --overwrite
+  when:
+    - generate_client_certs
+    - inventory_hostname != play_hosts
