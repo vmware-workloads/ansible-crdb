@@ -155,3 +155,10 @@
   when:
     - inventory_hostname == play_hosts[0]
     - generate_client_certs is defined and generate_client_certs
+
+- name: set ownership of certificate files
+  ansible.builtin.file:
+    dest: "{{ crdb_folder }}/{{ certs_folder }}"
+    owner: "{{ crdb_service_user }}"
+    group: "{{ crdb_service_group }}"
+    recurse: true
