@@ -82,10 +82,10 @@
     - generate_ca_certs
     - inventory_hostname == play_hosts[0]
 
-- name: Copy CA cert and key with owner and permissions
+- name: Copy CA cert with owner and permissions
   ansible.builtin.copy:
-    src:  "certificates/"
-    dest: "{{ crdb_folder }}"
+    src:  "certificates/{{ ca_crt }}"
+    dest: "{{ crdb_folder }}/{{ certs_folder }}"
     owner: "{{ crdb_service_user }}"
     group: "{{ crdb_service_group }}"
     mode: '0664'
@@ -93,6 +93,19 @@
   when:
     - generate_ca_certs
     - inventory_hostname != play_hosts[0]
+
+- name: Copy CA key with owner and permissions
+  ansible.builtin.copy:
+    src:  "certificates/{{ ca_key }}"
+    dest: "{{ crdb_folder }}/{{ safe_folder }}/"
+    owner: "{{ crdb_service_user }}"
+    group: "{{ crdb_service_group }}"
+    mode: '0440'
+    force: true
+  when:
+    - generate_ca_certs
+    - inventory_hostname != play_hosts[0]
+
 
 - name: "check if {{ node_crt }} exists"
   ansible.builtin.stat:
