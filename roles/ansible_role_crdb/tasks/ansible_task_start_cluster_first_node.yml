@@ -22,14 +22,15 @@
 
 - name: initialize the database
   ansible.builtin.shell:
-    timeout: 30
     cmd: >
       cockroach init 
       {{ use_ssl | ternary(crdb_secure_flag, crdb_insecure_flag) }}
       --host=localhost:{{ crdb_rpc_port }}
   register: result
-  #failed_when: result.rc != 0 and 'cluster has already been initialized' not in result.stderr and 'unable to bootstrap due to internal error' not in result.stderr
+  failed_when: result.rc != 0 and 'cluster has already been initialized' not in result.stderr and 'unable to bootstrap due to internal error' not in result.stderr
   when: running_st.rc != 0
+  async: 30
+  poll: 5
 
 - name: "create default user ({{ crdb_default_db_user }}/{{ crdb_default_db_password }})"
   ansible.builtin.shell:
