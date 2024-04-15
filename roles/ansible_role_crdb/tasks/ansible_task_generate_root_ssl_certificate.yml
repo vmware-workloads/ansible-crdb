@@ -129,22 +129,22 @@
     path: "{{ crdb_folder }}/{{ certs_folder }}/{{ client_root_crt }}"
   register: client_crt_stat
   when:
-    - inventory_hostname != play_hosts[0]
+    - inventory_hostname == play_hosts[0]
 
 - name: "check if {{ client_root_key }} exists"
   ansible.builtin.stat:
     path: "{{ crdb_folder }}/{{ safe_folder }}/{{ client_root_key }}"
   register: client_key_stat
   when:
-    - inventory_hostname != play_hosts[0]
+    - inventory_hostname == play_hosts[0]
 
-- name: check if node certificate needs to be generated
+- name: check if client certificate needs to be generated
   ansible.builtin.set_fact:
     generate_client_certs: "{{ (not (client_crt_stat.stat.exists and client_key_stat.stat.exists)) | bool }}"
   when:
-    - inventory_hostname != play_hosts[0]
+    - inventory_hostname == play_hosts[0]
 
-- name: generate cockroach 'root' user certificate
+- name: generate cockroach client root user certificate
   ansible.builtin.shell:
     cmd: >
       cockroach cert create-client 
@@ -154,4 +154,4 @@
       --overwrite
   when:
     - generate_client_certs
-    - inventory_hostname != play_hosts
+    - inventory_hostname == play_hosts[0]
