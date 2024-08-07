@@ -1,4 +1,4 @@
-- name: Use multiple patterns that contain a comma formatted as a YAML list
+- name: Parse data folders
   ansible.builtin.find:
     paths: "{{ crdb_folder }}"
     file_type: directory
