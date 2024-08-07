@@ -21,6 +21,14 @@
   register: kernel_st
   when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
 
+- name: rebooting machine
+  ansible.builtin.reboot:
+    reboot_timeout: 300
+    test_command: dpkg --verify
+    pre_reboot_delay: 5
+    post_reboot_delay: 5
+  when: kernel_st.changed
+
 - name: Check if /dev/ptp0 exists
   ansible.builtin.stat:
     path: /dev/ptp0
@@ -40,5 +48,4 @@
     test_command: dpkg --verify
     pre_reboot_delay: 5
     post_reboot_delay: 5
-  when: ptp_udev.changed or
-        kernel_st.changed
+  when: ptp_udev.changed
