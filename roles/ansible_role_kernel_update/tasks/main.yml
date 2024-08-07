@@ -15,7 +15,7 @@
       - "{{ apt_kernel_6_package }}"
     lock_timeout: 120
     update_cache: true
-  until: kernel_st.rc == 0
+  until: kernel_st is success
   retries: 30
   delay: 10
   register: kernel_st
