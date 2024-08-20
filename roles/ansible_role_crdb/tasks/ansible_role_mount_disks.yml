@@ -28,9 +28,20 @@
   loop: "{{ unused_disks }}"
   register: partition_result
 
-- name: Display unformatted devices
+- name: Display partition result
   debug:
     var: partition_result  
+
+- name: Filter partitions using json_query
+  set_fact:
+    partitions: "{{ partition_result | json_query(query) }}"
+  vars:
+    query: "partition_result.results[.disk.dev + (.partitions[].num | tostring)]"
+
+- name: Display found partitions
+  debug:
+    var: partitions  
+
 
 - name: create filesystem
   community.general.filesystem:
