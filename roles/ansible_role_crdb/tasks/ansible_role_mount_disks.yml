@@ -34,7 +34,7 @@
 
 - name: Filter partitions using json_query
   set_fact:
-    partitions: "{{ partition_result | json_query(query) }}"
+    partitioned_disks: "{{ partition_result | json_query(query) }}"
   vars:
     query: "partition_result.results[].{dev: disk.dev, num: partitions[].num}"
 
