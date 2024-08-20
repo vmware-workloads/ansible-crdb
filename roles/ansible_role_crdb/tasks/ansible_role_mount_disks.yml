@@ -3,41 +3,18 @@
     gather_subset:
       - hardware
 
-- name: Gather the list of mounted devices
-  ansible.builtin.shell:
-    cmd: >
-      lsblk --list --noheadings --output MOUNTPOINT,NAME 
-      | awk '/^\//{print $2}'
-      | awk '/^sd/{print $1}'
-      | awk '{sub(/[0-9]+/, "", $(NF-1)); print }'
-      | uniq
-  register: mounted_disks
-  changed_when: False
+- name: Get block devices without filesystem, mountpoints, or children
+  ansible.builtin.command: lsblk --fs -I8 --json
+  register: lsblk_output
 
-- name: Gather the list of all devices
-  ansible.builtin.shell:
-    cmd: >
-      lsblk --list --noheadings --output NAME
-      | awk '/^sd/{print $1}' 
-      | awk '{sub(/[0-9]+/, "", $(NF-1)); print }'
-      | uniq
-  register: all_disks
-  changed_when: False
-
-- name: Calculate the unused devices
+- name: Filter block devices using json_query
   set_fact:
-    unused_disks: "{{ all_disks.stdout_lines | difference(mounted_disks.stdout_lines) }}"
+    unused_disks: "{{ lsblk_output.stdout | from_json | json_query(query) }}"
+  vars:
+    query: "blockdevices[?children==null && fstype==null && mountpoints==[null]].name"
 
-- name: debug
-  ansible.builtin.debug:
-    var: mounted_disks.stdout_lines
-
-- name: debug
-  ansible.builtin.debug:
-    var: all_disks.stdout_lines
-
-- name: debug
-  ansible.builtin.debug:
+- name: Display unformatted devices
+  debug:
     var: unused_disks
 
 - name: partition disks
@@ -49,6 +26,11 @@
     name: data
     resize: true
   loop: "{{ unused_disks }}"
+  register: partition_result
+
+- name: Display unformatted devices
+  debug:
+    var: partition_result  
 
 - name: create filesystem
   community.general.filesystem:
