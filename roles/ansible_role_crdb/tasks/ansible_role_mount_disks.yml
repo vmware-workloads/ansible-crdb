@@ -40,7 +40,7 @@
 
 - name: Get device IDs for raw virt disks
   set_fact:
-    partition_list: "{{ partition_list | default([]) + [disk.dev] }}"
+    partition_list: "{{ partition_list | default([]) + [item.dev] }}"
     loop: "{{ partitioned_disks }}"      
 
 # - name: Combine the disk and partition numbers
