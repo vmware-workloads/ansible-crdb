@@ -34,18 +34,19 @@
 
 - name: Filter partitions using json_query
   set_fact:
-    partitioned_disks: "{{ partition_result | json_query(query) }}"
+    partitioned_disks: "{{ partitioned_disks|default({}) | combine ( {item.dev + item.num|string})"
+  with_items: "{{ partition_result | json_query(query) }}"
   vars:
     query: "results[].{dev: disk.dev, num: partitions[].num}"
 
-- name: Combine the disk and partition numbers
-  set_fact:
-    formatted_partitions: "{{ partitioned_disks | map('combine', {'partition': item.dev + item.num|string}) | map(attribute='partition') }}"
-  with_items: "{{ partitioned_disks }}"
+# - name: Combine the disk and partition numbers
+#   set_fact:
+#     formatted_partitions: "{{ partitioned_disks | map('combine', {'partition': item.dev + item.num|string}) | map(attribute='partition') }}"
+#   with_items: "{{ partitioned_disks }}"
 
 - name: Display the formatted partition names
   debug:
-    var: formatted_partitions
+    var: partitioned_disks
 
 
 - name: create filesystem
