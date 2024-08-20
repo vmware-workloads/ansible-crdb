@@ -34,7 +34,7 @@
 
 - name: Filter partitions using json_query
   set_fact:
-    partitioned_disks: "{{ partitioned_disks|default({}) | combine ( {item.dev + item.num|string})"
+    partitioned_disks: "{{ partitioned_disks| default({}) + item.dev + item.num|string }}"
   with_items: "{{ partition_result | json_query(query) }}"
   vars:
     query: "results[].{dev: disk.dev, num: partitions[].num}"
