@@ -34,10 +34,14 @@
 
 - name: Filter partitions using json_query
   set_fact:
-    partitioned_disks: "{{ partitioned_disks| default({}) + [item.dev] + [item.num]|string }}"
-  with_items: "{{ partition_result | json_query(query) }}"
+    partitioned_disks: "{{ partition_result | json_query(query) }}"
   vars:
     query: "results[].{dev: disk.dev, num: partitions[].num}"
+
+- name: Get device IDs for raw virt disks
+  set_fact:
+    partition_list: "{{ partition_list | default([]) + [disk.dev] }}"
+    loop: "{{ partitioned_disks }}"      
 
 # - name: Combine the disk and partition numbers
 #   set_fact:
