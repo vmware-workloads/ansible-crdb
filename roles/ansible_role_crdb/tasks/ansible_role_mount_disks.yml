@@ -36,11 +36,16 @@
   set_fact:
     partitions: "{{ partition_result | json_query(query) }}"
   vars:
-    query: "partition_result.results[.disk.dev + (.partitions[].num | tostring)]"
+    query: "partition_result.results[].{dev: disk.dev, num: partitions[].num}"
 
-- name: Display found partitions
+- name: Combine the disk and partition numbers
+  set_fact:
+    formatted_partitions: "{{ partitioned_disks | map('combine', {'partition': item.dev + item.num|string}) | map(attribute='partition') }}"
+  with_items: "{{ partitioned_disks }}"
+
+- name: Display the formatted partition names
   debug:
-    var: partitions  
+    var: formatted_partitions
 
 
 - name: create filesystem
