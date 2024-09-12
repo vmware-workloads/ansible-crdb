@@ -17,15 +17,25 @@
   debug:
     var: unused_disks
 
+- name: Create drive letter device id dict
+  set_fact:
+    disk_name_map: "{{ dict(disk_names | unused_disks }}"    
+
+- name: Display the device id list
+  debug:
+    var: disk_name_map    
+
 - name: partition disks
   community.general.parted:
-    device: "/dev/{{ item }}"
+    device: "/dev/{{ item.value }}"
     number: 1
     state: present
     label: gpt
-    name: data
+    name: "{{ item.key }}"
     resize: true
-  loop: "{{ unused_disks }}"
+  loop: "{{ disk_name_map | dict2items }}"
+  loop_control:
+    index_var: index
   register: partition_result
 
 - name: Display partition result
@@ -37,11 +47,7 @@
     partitioned_disks: "{{ partition_result | json_query(query) }}"
   vars:
     query: "results[].{dev: disk.dev, num: partitions[].num}"
-
-- name: Get device IDs for raw virt disks
-  set_fact:
-    partition_list: "{{ partition_list | default([]) + [item.dev] }}"
-  loop: "{{ partitioned_disks }}"      
+  
 
 # - name: Combine the disk and partition numbers
 #   set_fact:
