@@ -19,7 +19,7 @@
 
 - name: Create drive letter device id dict
   set_fact:
-    disk_name_map: "{{ dict(disk_names | unused_disks) }}"    
+    disk_name_map: "{{ dict(disk_names | zip(unused_disks)) }}"    
 
 - name: Display the device id list
   debug:
