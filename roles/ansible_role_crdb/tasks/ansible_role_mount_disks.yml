@@ -17,11 +17,11 @@
   debug:
     var: unused_disks
 
-- name: Create drive letter device id dict
+- name: Create map of disk names to disks
   set_fact:
     disk_name_map: "{{ dict(disk_names | zip(unused_disks)) }}"    
 
-- name: Display the device id list
+- name: Display the map of disk names to disks
   debug:
     var: disk_name_map    
 
@@ -67,12 +67,12 @@
 
 - name: mount data volumes
   ansible.posix.mount:
-    src: "/dev/{{ item }}1"
-    path: "{{ crdb_folder }}/data{{ index }}"
+    src: "/dev/{{ item.value }}1"
+    path: "{{ crdb_folder }}/{{ item.key }}"
     opts: defaults
     state: mounted
     fstype: "{{ data_filesystem }}"
-  loop: "{{ unused_disks }}"
+  loop: "{{ disk_name_map | dict2items }}"
   loop_control:
     index_var: index
 
