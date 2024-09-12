@@ -3,9 +3,18 @@
     gather_subset:
       - hardware
 
+
+#
+# Use lsblk to query disk devices and output in json to a variable
+#
+
 - name: Get block devices without filesystem, mountpoints, or children
   ansible.builtin.command: lsblk --fs -I8 --json
   register: lsblk_output
+
+#
+# Filter the lsblk output to find unused devices
+# 
 
 - name: Filter block devices using json_query
   set_fact:
@@ -17,6 +26,12 @@
   debug:
     var: unused_disks
 
+#
+# Create a dictionary of disk names, e.g. data0 | sda
+# note that disk_names is an inventory variable that
+# is passed down from vcf automation (aria)
+# 
+
 - name: Create map of disk names to disks
   set_fact:
     disk_name_map: "{{ dict(disk_names | zip(unused_disks)) }}"    
@@ -24,6 +39,12 @@
 - name: Display the map of disk names to disks
   debug:
     var: disk_name_map    
+
+
+#
+# Create exacly one partition and name each disk from the vcf automation
+# inputs
+#    
 
 - name: partition disks
   community.general.parted:
@@ -42,28 +63,36 @@
   debug:
     var: partition_result  
 
-- name: Filter partitions using json_query
-  set_fact:
-    partitioned_disks: "{{ partition_result | json_query(query) }}"
-  vars:
-    query: "results[].{dev: disk.dev, num: partitions[].num}"
+
+#- name: Filter partitions using json_query
+#  set_fact:
+#    partitioned_disks: "{{ partition_result | json_query(query) }}"
+#  vars:
+#    query: "results[].{dev: disk.dev, num: partitions[].num}"
   
 
-# - name: Combine the disk and partition numbers
-#   set_fact:
-#     formatted_partitions: "{{ partitioned_disks | map('combine', {'partition': item.dev + item.num|string}) | map(attribute='partition') }}"
-#   with_items: "{{ partitioned_disks }}"
+#- name: Display the formatted partition names
+#  debug:
+#    var: partitioned_disks
 
-- name: Display the formatted partition names
-  debug:
-    var: partitioned_disks
 
+#
+# Create the filesystem on the found disks from
+# earier. We know we have only one partition so
+# devices resolve to, for instance, /dev/sdb1
+#
 
 - name: create filesystem
   community.general.filesystem:
     fstype: "{{ data_filesystem }}"
     dev: "/dev/{{ item }}1"
   loop: "{{ unused_disks }}"
+
+
+#
+# Mount the new disks, to the same path as the 
+# disk name (as specified in vcf automation)
+#
 
 - name: mount data volumes
   ansible.posix.mount:
