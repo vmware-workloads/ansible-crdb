@@ -106,6 +106,7 @@
     index_var: index
 
 - name: get data volumes
+  ignore_errors: true
   ansible.builtin.shell:
     cmd: >
       lsblk --list --noheadings --output MOUNTPOINT
