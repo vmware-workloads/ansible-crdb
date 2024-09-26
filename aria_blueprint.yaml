@@ -1,0 +1,197 @@
+name: crdb
+version: 1.0.0
+formatVersion: 2
+variables:
+  ports:
+    rpc_port: 26357
+    psql_port: 26257
+    web_port: 8080
+  image: ubuntu-22.04-ptp
+inputs:
+  vmImage:
+    type: string
+    title: VM Image
+    oneOf:
+      - title: Ubuntu Jammy (22.04)
+        const: https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.ova
+      - title: Ubuntu Focal (20.04)
+        const: https://cloud-images.ubuntu.com/focal/current/focal-server-cloudimg-amd64.ova
+      - title: Ubuntu Noble (24.04)
+        const: https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.ova
+    default: https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.ova
+  vmUsername:
+    type: string
+    title: VM Username
+    default: crdb
+  vmPassword:
+    type: string
+    title: VM Password
+    default: P@ssword123!
+    encrypted: true
+  vmSize:
+    type: string
+    title: CRDB VM Size
+    default: large
+    enum:
+      - small
+      - medium
+      - large
+  vm_count:
+    title: Number of CRDB VMs
+    type: integer
+    default: 4
+  diskConfig:
+    default:
+      - name: data0
+        size: 80
+      - name: data1
+        size: 90
+      - name: data2
+        size: 100
+    type: array
+    title: |
+      Additional Data disks (per VM).
+    minItems: 0
+    maxItems: 5
+    items:
+      type: object
+      properties:
+        size:
+          type: integer
+          title: Size GB
+          default: 80
+          maximum: 200
+        name:
+          type: string
+          title: name
+  os_diskSize:
+    type: integer
+    title: OS Disk Size (GB)
+    minimum: 60
+    maximum: 200
+    default: 60
+  vmNotes:
+    title: VM Notes
+    type: string
+    default: crdb
+resources:
+  Ansible_API:
+    type: Custom.Ansible_API
+    dependsOn:
+      - Custom_ptp
+    properties:
+      ssl_verify: false
+      verbose: true
+      organization_name: Default
+      job_template_name: CRDB Template dev
+      inventory_name: ${env.blueprintName}-${env.deploymentId}
+      inventory_variables:
+        use_ssl: true
+        lb_addresses:
+          - ${resource.web_lb.address}
+        disk_names: ${filter_by(resource.disk.name, (k,v) => v >= 0 && v < length(input.diskConfig))}
+      hosts:
+        - ${resource.crdb-vm.*}
+      host_variables:
+        crdb-vm:
+          rack: 1
+          disks: ${input.diskConfig}
+      host_groups:
+        crdb:
+          - ${resource.crdb-vm.*}
+      group_variables:
+        crdb:
+          psql_port: ${variable.ports.psql_port}
+          rpc_port: ${variable.ports.rpc_port}
+  crdb-vm:
+    type: Cloud.vSphere.Machine
+    allocatePerInstance: true
+    properties:
+      count: ${input.vm_count}
+      imageRef: ${input.vmImage}
+      flavor: ${input.vmSize}
+      remoteAccess:
+        authentication: publicPrivateKey
+        sshKey: ${secret.jumphost-public-key-2}
+        username: ${input.vmUsername}
+      cloudConfigSettings:
+        deploymentFailOnCloudConfigRuntimeError: true
+      cloudConfig: |
+        #cloud-config
+        hostname: ${self.resourceName}
+        users:
+          - default
+          - name: ${input.vmUsername}
+            shell: /bin/bash
+            sudo: ALL=(ALL) NOPASSWD:ALL 
+        ssh_pwauth: true
+        runcmd:
+          - netplan apply
+        ssh_pwauth: true
+        runcmd:
+          - netplan apply      
+      attachedDisks: ${map_to_object(slice(resource.disk[*].id, length(input.diskConfig) * count.index, length(input.diskConfig) * (count.index + 1)), "source")}
+      networks:
+        - network: ${resource.web_net.id}
+          assignment: static
+      storage:
+        bootDiskCapacityInGB: ${input.os_diskSize}
+  disk:
+    type: Cloud.vSphere.Disk
+    allocatePerInstance: true
+    properties:
+      capacityGb: ${input.diskConfig[count.index % length(input.diskConfig)].size}
+      SCSIController: ${'SCSI_Controller_' + to_string(count.index % 4)}
+      count: ${input.vm_count * length(input.diskConfig)}
+      name: ${input.diskConfig[count.index % length(input.diskConfig)].name}
+      tags:
+        - key: App
+          value: ${to_string('crdb_' + count.index)}
+  prod_net:
+    type: Cloud.Network
+    properties:
+      name: ls-prod
+      networkType: public
+      constraints:
+        - tag: segment_name:ls-prod
+  web_net:
+    type: Cloud.NSX.Network
+    properties:
+      name: ls-web
+      networkType: routed
+  web_lb:
+    type: Cloud.LoadBalancer
+    properties:
+      routes:
+        - protocol: TCP
+          port: ${variable.ports.psql_port}
+          instanceProtocol: TCP
+          instancePort: ${variable.ports.psql_port}
+          healthCheckConfiguration:
+            protocol: TCP
+            port: ${variable.ports.psql_port}
+            urlPath: /#/login
+            intervalSeconds: 5
+            timeoutSeconds: 15
+            unhealthyThreshold: 5
+            healthyThreshold: 2
+        - protocol: HTTPS
+          port: ${variable.ports.web_port}
+          instanceProtocol: HTTPS
+          instancePort: ${variable.ports.web_port}
+          healthCheckConfiguration:
+            protocol: HTTPS
+            port: ${variable.ports.web_port}
+            intervalSeconds: 5
+            timeoutSeconds: 15
+            unhealthyThreshold: 5
+            healthyThreshold: 2
+      network: ${resource.prod_net.id}
+      instances: ${resource.crdb-vm[*].id}
+      internetFacing: false
+  Custom_ptp:
+    type: Custom.ptp3
+    allocatePerInstance: true
+    properties:
+      count: ${input.vm_count}
+      vm: ${to_string(slice(resource.crdb-vm[*].resourceName, count.index, count.index + 1)[0])}
