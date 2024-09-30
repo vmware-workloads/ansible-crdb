@@ -506,8 +506,52 @@ def getVroEndpointID():
         if item.get('endpointType') == 'vro':
             return item.get('documentSelfLink')
 
-
     return None
+
+
+def matchVraGatewayWorkflowId(WorkflowId):
+    """
+        Match the given vRO workflow ID with the proxied workflow in vRA 
+
+        Args:
+            none
+
+        Returns:
+            str or None: The ID of the vro instance if found, None otherwise.
+    """
+
+    url = f'{baseUrl}/vro/workflows'
+    resp = requests.get(url, headers=headers, verify=False)
+    #print(resp.status_code, resp.text)
+    resp.raise_for_status()
+    
+    content = resp.json().get('content', [])
+    for item in content:
+        if item.get('id') == WorkflowId:
+            return WorkflowId
+
+    return None    
+
+
+def startVroDataCollection(vroInstanceId):
+    """
+        Match the given vRO workflow ID with the proxied workflow in vRA 
+
+        Args:
+            vroInstanceId (str): the ID of the vRO instance
+
+        Returns:
+            none
+    """
+    
+    # Send an empty patch to update
+    url = f'{baseUrl}/iaas/api/integrations/{vroInstanceId}?apiVersion=2021-07-15'
+    print(url)
+    body = {}
+    resp = requests.patch(url, json=body, headers=headers, verify=False)
+    print(resp.status_code, resp.text)
+    resp.raise_for_status()
+
 
 
 ######
@@ -549,11 +593,20 @@ DeleteWorkflowId=vroCreateWorkflow(workflowFile=vroDeleteWorkflowFile)
 
 vroID = getVroEndpointID()
 print(vroID)
+vroInstanceId=vroID.split('/')[-1]
 
+print(vroInstanceId)
+
+startVroDataCollection(vroInstanceId = vroInstanceId)
 
 #sleep for a bit
 time.sleep(5)
+while matchVraGatewayWorkflowId(WorkflowId=WorkflowId) != WorkflowId:
+    time.sleep(5)
+    print('.', end='')
 
+
+print(WorkflowId)
 
 # Create/update the custom resource
 properties = {
