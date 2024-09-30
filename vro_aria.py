@@ -597,10 +597,11 @@ vroInstanceId=vroID.split('/')[-1]
 
 print(vroInstanceId)
 
+# Start a data collection to sync the embedded vRO workflows, etc.
 startVroDataCollection(vroInstanceId = vroInstanceId)
 
-#sleep for a bit
-time.sleep(5)
+# Wait until we the ID appear in vRA
+# time.sleep(5)
 while matchVraGatewayWorkflowId(WorkflowId=WorkflowId) != WorkflowId:
     time.sleep(5)
     print('.', end='')
