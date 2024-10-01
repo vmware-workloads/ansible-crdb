@@ -6,6 +6,7 @@ urllib3.disable_warnings()
 from datetime import datetime
 import time
 import sys
+import uuid
 
 
 sourceId = "" 
@@ -238,7 +239,7 @@ def createOrUpdateBlueprint(projectId):
 
 
 
-def vroCreateWorkflow(workflowFile):
+def vroCreateWorkflow(workflowFile, WorkflowName):
     """
         Creates a VRO (VMware vRealize Orchestrator) workflow.
 
@@ -251,26 +252,32 @@ def vroCreateWorkflow(workflowFile):
     with open(workflowFile) as workflow_file:
         workflow = json.load(workflow_file)
 
-    print(workflow["name"])
+
+    workflow["name"] = WorkflowName
+    #print(workflow["name"])
 
     # Get the list of existing workflows from the vro proxy
-    url = f'{baseUrl}/vro/workflows'
+    url = f'{baseUrl}/vro/workflows?page=0&size=9999'
     resp = requests.get(url, headers=headers, verify=False)
     #print(resp.status_code, resp.text)
     resp.raise_for_status()
     existing = [x for x in resp.json()["content"] if x["name"] == workflow["name"]]
 
-    #print(existing)
-
+    # make sure it also exists in the vro inventory
     if len(existing) > 0:
-        print("WORKFLOW ALREADY EXISTS!")
-        # If the name exists, just return the ID
-        #return existing[0]["id"]
-     
+        url = f'{baseUrl}/vco/api/workflows'
+        resp = requests.get(url, headers=headers, verify=False)
+        response_data = resp.json()
+        for link in response_data.get('link', []):
+            for attribute in link.get('attributes', []):
+                if attribute.get('value') == workflow["name"]:
+                    print(f'Found existing workflow: {workflow["name"]}')
+                    return existing[0]['id']
 
+    # Create a new Workflow if it doesn't exist yet 
     url = f'{baseUrl}/vco/api/workflows'
     resp = requests.post(url, json=workflow, headers=headers, verify=False)
-    #print(resp.status_code, resp.text)
+    print(resp.status_code, resp.text)
     resp.raise_for_status()
     return resp.json()["id"]
 
@@ -332,7 +339,7 @@ def createOrUpdateVroBasedCustomResource(projectId, WorkflowId, DeleteWorkflowId
         "schemaType": "VRO_INVENTORY"
     }
 
-    print(body)
+    #print(body)
 
 
     # Get the list of existing custom resources
@@ -346,6 +353,7 @@ def createOrUpdateVroBasedCustomResource(projectId, WorkflowId, DeleteWorkflowId
     # Create the custom resource if it doesn't already exist
     if len(existing) > 0:
         # Update the custom resource if it already exists
+        print(f'Found existing custom resource: {vroCrName}\n\n')
         body["id"] = existing[0]["id"]
         custom_resource_exists = True
     resp = requests.post(url, json=body, headers=headers, verify=False)
@@ -390,7 +398,6 @@ def createOrUpdateProject():
     body = {
         "name": projectName,
         "description": "",
-        "orgId": orgId,
         "administrators": [],
         "members": [],
         "viewers": [],
@@ -521,7 +528,7 @@ def matchVraGatewayWorkflowId(WorkflowId):
             str or None: The ID of the vro instance if found, None otherwise.
     """
 
-    url = f'{baseUrl}/vro/workflows'
+    url = f'{baseUrl}/vro/workflows?page=0&size=9999&expand=true'
     resp = requests.get(url, headers=headers, verify=False)
     #print(resp.status_code, resp.text)
     resp.raise_for_status()
@@ -529,6 +536,7 @@ def matchVraGatewayWorkflowId(WorkflowId):
     content = resp.json().get('content', [])
     for item in content:
         if item.get('id') == WorkflowId:
+            #print(WorkflowId)
             return WorkflowId
 
     return None    
@@ -554,6 +562,23 @@ def startVroDataCollection(vroInstanceId):
     resp.raise_for_status()
 
 
+
+def poll_function(func, target_value, sleepTime, timeout=None, *args, **kwargs):
+    
+    start_time = time.time()
+    
+    while True:
+        print('.', end='')  
+        result = func(*args, **kwargs)
+        #print(f'matching {result} with {target_value}')
+        
+        if result == target_value:
+            return result
+        
+        if timeout and (time.time() - start_time) >= timeout:
+            raise TimeoutError("Polling timed out.")
+        
+        time.sleep(sleepTime)  # Sleep for 5 seconds between checks
 
 ######
 
@@ -586,29 +611,38 @@ projectId = createOrUpdateProject()
 
 
 # 'Create' orchestrator workflow
-WorkflowId=vroCreateWorkflow(workflowFile=vroWorkflowFile)
+WorkflowId=vroCreateWorkflow(workflowFile=vroWorkflowFile, WorkflowName=WorkflowName)
 
 
 # 'Delete' orchestrator workflow
-DeleteWorkflowId=vroCreateWorkflow(workflowFile=vroDeleteWorkflowFile)
+DeleteWorkflowId=vroCreateWorkflow(workflowFile=vroDeleteWorkflowFile, WorkflowName=DeleteWorkflowName)
 
 vroID = getVroEndpointID()
-print(vroID)
+#print(vroID)
 vroInstanceId=vroID.split('/')[-1]
 
-print(vroInstanceId)
+#print(WorkflowId)
+#print(DeleteWorkflowId)
 
 print("Waiting for sync .", end='')
 # Start a data collection to sync the embedded vRO workflows, etc.
 startVroDataCollection(vroInstanceId = vroInstanceId)
 
-# Wait until we the ID appear in vRA
-while matchVraGatewayWorkflowId(WorkflowId=WorkflowId) != WorkflowId:
-    time.sleep(5)
-    print('.', end='')
+  
 
+poll_function(matchVraGatewayWorkflowId, 
+               target_value=WorkflowId, 
+               sleepTime=5, 
+               timeout=120,
+               WorkflowId=WorkflowId)
 
-print(WorkflowId)
+poll_function(matchVraGatewayWorkflowId, 
+               target_value=DeleteWorkflowId, 
+               sleepTime=5, 
+               timeout=120,
+               WorkflowId=DeleteWorkflowId)
+
+print("\n\nFound Workflows\n\n")
 
 # Create/update the custom resource
 """
@@ -622,157 +656,46 @@ properties = {
 properties = {
   "type": "object",
   "properties": {
-    "vm": {
-      "type": "string",
-      "title": "vm"
-    },
+    "vm": {"type": "string","title": "vm"},
     "output": {
       "type": "object",
       "properties": {
-        "vimType": {
-          "type": "string",
-          "title": "vimType"
-        },
-        "hostName": {
-          "type": "string",
-          "title": "hostName"
-        },
-        "memory": {
-          "type": "string",
-          "title": "memory"
-        },
-        "vmToolsStatus": {
-          "type": "string",
-          "title": "vmToolsStatus"
-        },
-        "productFullVersion": {
-          "type": "string",
-          "title": "productFullVersion"
-        },
-        "displayName": {
-          "type": "string",
-          "title": "displayName"
-        },
-        "unsharedStorage": {
-          "type": "string",
-          "title": "unsharedStorage"
-        },
-        "configStatus": {
-          "type": "object",
-          "title": "configStatus"
-        },
-        "type": {
-          "type": "string",
-          "title": "type"
-        },
-        "hostMemoryUsage": {
-          "type": "string",
-          "title": "hostMemoryUsage"
-        },
-        "productName": {
-          "type": "string",
-          "title": "productName"
-        },
-        "biosId": {
-          "type": "string",
-          "title": "biosId"
-        },
-        "totalStorage": {
-          "type": "string",
-          "title": "totalStorage"
-        },
-        "instanceId": {
-          "type": "string",
-          "title": "instanceId"
-        },
-        "mem": {
-          "type": "string",
-          "title": "mem"
-        },
-        "id": {
-          "type": "string",
-          "title": "id"
-        },
-        "state": {
-          "type": "string",
-          "title": "state"
-        },
-        "annotation": {
-          "type": "string",
-          "title": "annotation"
-        },
-        "vimId": {
-          "type": "string",
-          "title": "vimId"
-        },
-        "overallCpuUsage": {
-          "type": "string",
-          "title": "overallCpuUsage"
-        },
-        "connectionState": {
-          "type": "string",
-          "title": "connectionState"
-        },
-        "guestMemoryUsage": {
-          "type": "string",
-          "title": "guestMemoryUsage"
-        },
-        "guestHeartbeatStatus": {
-          "type": "object",
-          "title": "guestHeartbeatStatus"
-        },
-        "ipAddress": {
-          "type": "string",
-          "title": "ipAddress"
-        },
-        "cpu": {
-          "type": "string",
-          "title": "cpu"
-        },
-        "productVendor": {
-          "type": "string",
-          "title": "productVendor"
-        },
-        "guestOS": {
-          "type": "string",
-          "title": "guestOS"
-        },
-        "memoryOverhead": {
-          "type": "string",
-          "title": "memoryOverhead"
-        },
-        "isTemplate": {
-          "type": "boolean",
-          "title": "isTemplate"
-        },
-        "sdkId": {
-          "type": "string",
-          "title": "sdkId"
-        },
-        "name": {
-          "type": "string",
-          "title": "name"
-        },
-        "committedStorage": {
-          "type": "string",
-          "title": "committedStorage"
-        },
-        "vmToolsVersionStatus": {
-          "type": "string",
-          "title": "vmToolsVersionStatus"
-        },
-        "vmVersion": {
-          "type": "string",
-          "title": "vmVersion"
-        },
-        "alarmActionsEnabled": {
-          "type": "boolean",
-          "title": "alarmActionsEnabled"
-        },
-        "overallStatus": {
-          "type": "object",
-          "title": "overallStatus"
-        }
+        "vimType": { "type": "string", "title": "vimType" },
+        "hostName": { "type": "string", "title": "hostName" },
+        "memory": { "type": "string", "title": "memory" },
+        "vmToolsStatus": { "type": "string", "title": "vmToolsStatus" },
+        "productFullVersion": { "type": "string", "title": "productFullVersion" },
+        "displayName": { "type": "string", "title": "displayName" },
+        "unsharedStorage": { "type": "string", "title": "unsharedStorage" },
+        "configStatus": { "type": "object", "title": "configStatus" },
+        "type": { "type": "string", "title": "type" },
+        "hostMemoryUsage": { "type": "string", "title": "hostMemoryUsage" },
+        "productName": { "type": "string", "title": "productName" },
+        "biosId": { "type": "string", "title": "biosId" },
+        "totalStorage": { "type": "string", "title": "totalStorage" },
+        "instanceId": { "type": "string", "title": "instanceId" },
+        "mem": { "type": "string", "title": "mem" },
+        "id": { "type": "string", "title": "id" },
+        "state": { "type": "string", "title": "state" },
+        "annotation": { "type": "string", "title": "annotation" },
+        "vimId": { "type": "string", "title": "vimId" },
+        "overallCpuUsage": { "type": "string", "title": "overallCpuUsage" },
+        "connectionState": { "type": "string", "title": "connectionState" },
+        "guestMemoryUsage": { "type": "string", "title": "guestMemoryUsage" },
+        "guestHeartbeatStatus": { "type": "object", "title": "guestHeartbeatStatus" },
+        "ipAddress": { "type": "string", "title": "ipAddress" },
+        "cpu": { "type": "string", "title": "cpu" },
+        "productVendor": { "type": "string", "title": "productVendor" },
+        "guestOS": { "type": "string", "title": "guestOS" },
+        "memoryOverhead": { "type": "string", "title": "memoryOverhead" },
+        "isTemplate": { "type": "boolean", "title": "isTemplate" },
+        "sdkId": { "type": "string", "title": "sdkId" },
+        "name": { "type": "string", "title": "name" },
+        "committedStorage": { "type": "string", "title": "committedStorage" },
+        "vmToolsVersionStatus": { "type": "string", "title": "vmToolsVersionStatus" },
+        "vmVersion": { "type": "string", "title": "vmVersion" },
+        "alarmActionsEnabled": { "type": "boolean", "title": "alarmActionsEnabled" },
+        "overallStatus": { "type": "object", "title": "overallStatus" }
       },
       "computed": True
     }
