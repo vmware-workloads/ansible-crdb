@@ -1,5 +1,5 @@
 {
-  "aria_base_url": "https://wdc-vrava.vcf01.isvlab.vmware.com",
+  "aria_base_url": "",
   "workflow_name": "automated_ptp",
   "delete_workflow_name": "automated_delete_ptp",
   "vro_cr_name": "ptp_cr",
