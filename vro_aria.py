@@ -6,14 +6,11 @@ urllib3.disable_warnings()
 from datetime import datetime
 import time
 import sys
-import uuid
+
 
 
 sourceId = "" 
 contentSourceId = ""
-
-
-
 
 configFile = f'config.json' # Name of the configuration file
 
@@ -156,30 +153,6 @@ def getCatalogItemId(contentSourceId):
     else:
         return existing[0]["id"]
 
-def createOrUpdateDbCrudCustomForm(sourceId, blueprintName):
-    """
-        Creates or updates the catalog request form for users to enter the database specifications
-
-        Args:
-            sourceId (str): The ID of the source.
-            blueprintName (str): The name of the blueprint.
-
-        Returns:
-            None
-    """
-    url = f'{baseUrl}/form-service/api/forms'
-    body = {
-        "name":blueprintName,
-        "form": json.dumps(yaml.safe_load(open('db_crud_form.yaml', 'r'))),  # File to read in order to generate the custom form
-        "styles": None,
-        "status":"ON",
-        "type":"requestForm",
-        "sourceId":sourceId,
-        "sourceType":"com.vmw.blueprint"
-    }
-    resp = requests.post(url, json=body, headers=headers, verify=False)
-    print(resp.status_code, resp.text)
-    resp.raise_for_status()
 
 
 def createOrUpdateBlueprint(projectId):
@@ -414,83 +387,6 @@ def createOrUpdateProject():
     resp.raise_for_status()
     return resp.json()["id"]
 
-
-def createOrUpdateContentSharingPolicy(projectId, contentSourceId):
-    """
-        Creates or updates the content sharing policy for the project members to access the templates imported with the content source
-
-        Args:
-            projectId (str): The ID of the project.
-            contentSourceId (str): The ID of the content source.
-
-        Returns:
-            str: The ID of the created or updated policy.
-    """
-
-    # Define the body of the policy
-    body = {
-        "typeId": "com.vmware.policy.catalog.entitlement",
-        "definition": {
-            "entitledUsers": [
-            {
-                "userType": "USER",
-                "principals": [
-                {
-                    "type": "PROJECT",
-                    "referenceId": ""
-                }
-                ],
-                "items": [
-                {
-                    "id": contentSourceId,
-                    "type": "CATALOG_SOURCE_IDENTIFIER"
-                }
-                ]
-            }
-            ]
-        },
-        "enforcementType": "HARD",
-        "name": "share1",
-        "projectId": projectId
-    }
-
-    url = f'{baseUrl}/policy/api/policies?page=0&size=20'
-    resp = requests.get(url, headers=headers, verify=False)
-    print(resp.status_code, resp.text)
-    resp.raise_for_status()
-
-    existing = [x for x in resp.json()["content"] if x["projectId"] == projectId and x["name"] == body["name"]]
-
-
-    if len(existing) == 0:
-        url = f'{baseUrl}/policy/api/policies'
-        resp = requests.post(url, json=body, headers=headers, verify=False)
-        print(resp.status_code, resp.text)
-        resp.raise_for_status()
-        return resp.json()["id"]
-    else:
-        return existing[0]["id"]
-
-
-
-def getenvID(envList):
-    """
-        Get the ID of the environment from the given list.
-
-        Args:
-            envList (list): List of environments.
-
-        Returns:
-            str or None: The ID of the environment if found, None otherwise.
-    """
-    if envList is None:
-        return None
-
-    for item in envList:
-         attrMap = dict([(attr.get('name'), attr.get('value'))  for attr in item["attributes"]])
-         if attrMap.get('@name') == config["env_name"]:
-              return attrMap.get('@id')
-    return None
 
 
 def getVroEndpointID():
