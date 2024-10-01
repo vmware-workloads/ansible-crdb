@@ -248,12 +248,29 @@ def vroCreateWorkflow(workflowFile):
             Id of workflow
     """
 
+    with open(workflowFile) as workflow_file:
+        workflow = json.load(workflow_file)
+
+    print(workflow["name"])
+
+    # Get the list of existing workflows from the vro proxy
+    url = f'{baseUrl}/vro/workflows'
+    resp = requests.get(url, headers=headers, verify=False)
+    #print(resp.status_code, resp.text)
+    resp.raise_for_status()
+    existing = [x for x in resp.json()["content"] if x["name"] == workflow["name"]]
+
+    #print(existing)
+
+    if len(existing) > 0:
+        print("WORKFLOW ALREADY EXISTS!")
+        # If the name exists, just return the ID
+        #return existing[0]["id"]
      
 
-
     url = f'{baseUrl}/vco/api/workflows'
-    resp = requests.post(url, data=open(workflowFile, "r").read(), headers=headers, verify=False)
-    print(resp.status_code, resp.text)
+    resp = requests.post(url, json=workflow, headers=headers, verify=False)
+    #print(resp.status_code, resp.text)
     resp.raise_for_status()
     return resp.json()["id"]
 
@@ -285,19 +302,9 @@ def createOrUpdateVroBasedCustomResource(projectId, WorkflowId, DeleteWorkflowId
         "name":WorkflowName,
         "projectId":projectId,
         "type":"vro.workflow",
-        "inputParameters": [
-        {
-          "type": "string",
-          "title": "vm"
-        }
-      ],
-      "outputParameters": [
-        {
-          "type": "VC:VirtualMachine",
-          "title": "output"
-        }
-      ],
-      "endpointLink": vroID
+        "inputParameters": [{"type": "string","name": "vm"}],
+        "outputParameters": [{"type": "VC:VirtualMachine","name": "output"}],
+        "endpointLink": vroID
     }
 
     vroDeleteWorkflow = {
@@ -305,23 +312,17 @@ def createOrUpdateVroBasedCustomResource(projectId, WorkflowId, DeleteWorkflowId
         "name":DeleteWorkflowName,
         "projectId":projectId,
         "type":"vro.workflow",
-        "inputParameters": [
-        {
-          "type": "string",
-          "title": "vm"
-        }
-      ],
-    "endpointLink": vroID
+        "inputParameters": [{"type": "VC:VirtualMachine","name": "vm"}],
+        "endpointLink": vroID
     }    
 
-    #print(abxAction)
 
     # create the body of the request 
     body = {
         "displayName":vroCrName,
         "description":"",
         "resourceType":vroCrTypeName,
-        "externalType":"VC:VirtualMachine",
+        "externalType": "VC:VirtualMachine",
         "status":"RELEASED",
         "mainActions": {
           "create": vroWorkflow,
@@ -331,7 +332,7 @@ def createOrUpdateVroBasedCustomResource(projectId, WorkflowId, DeleteWorkflowId
         "schemaType": "VRO_INVENTORY"
     }
 
-    #print(body)
+    print(body)
 
 
     # Get the list of existing custom resources
@@ -546,10 +547,10 @@ def startVroDataCollection(vroInstanceId):
     
     # Send an empty patch to update
     url = f'{baseUrl}/iaas/api/integrations/{vroInstanceId}?apiVersion=2021-07-15'
-    print(url)
+    #print(url)
     body = {}
     resp = requests.patch(url, json=body, headers=headers, verify=False)
-    print(resp.status_code, resp.text)
+    #print(resp.status_code, resp.text)
     resp.raise_for_status()
 
 
@@ -597,11 +598,11 @@ vroInstanceId=vroID.split('/')[-1]
 
 print(vroInstanceId)
 
+print("Waiting for sync .", end='')
 # Start a data collection to sync the embedded vRO workflows, etc.
 startVroDataCollection(vroInstanceId = vroInstanceId)
 
 # Wait until we the ID appear in vRA
-# time.sleep(5)
 while matchVraGatewayWorkflowId(WorkflowId=WorkflowId) != WorkflowId:
     time.sleep(5)
     print('.', end='')
@@ -610,12 +611,175 @@ while matchVraGatewayWorkflowId(WorkflowId=WorkflowId) != WorkflowId:
 print(WorkflowId)
 
 # Create/update the custom resource
+"""
 properties = {
+    "properties": {
+        "vm": {"type": "string","title": "vm"},
+        "output": {"type": "object","properties": {"name": {"type": "string","title": "name"}},"computed": True}
+    }
+}
+"""
+properties = {
+  "type": "object",
   "properties": {
-    "vm": {"type": "string"},
+    "vm": {
+      "type": "string",
+      "title": "vm"
+    },
+    "output": {
+      "type": "object",
+      "properties": {
+        "vimType": {
+          "type": "string",
+          "title": "vimType"
+        },
+        "hostName": {
+          "type": "string",
+          "title": "hostName"
+        },
+        "memory": {
+          "type": "string",
+          "title": "memory"
+        },
+        "vmToolsStatus": {
+          "type": "string",
+          "title": "vmToolsStatus"
+        },
+        "productFullVersion": {
+          "type": "string",
+          "title": "productFullVersion"
+        },
+        "displayName": {
+          "type": "string",
+          "title": "displayName"
+        },
+        "unsharedStorage": {
+          "type": "string",
+          "title": "unsharedStorage"
+        },
+        "configStatus": {
+          "type": "object",
+          "title": "configStatus"
+        },
+        "type": {
+          "type": "string",
+          "title": "type"
+        },
+        "hostMemoryUsage": {
+          "type": "string",
+          "title": "hostMemoryUsage"
+        },
+        "productName": {
+          "type": "string",
+          "title": "productName"
+        },
+        "biosId": {
+          "type": "string",
+          "title": "biosId"
+        },
+        "totalStorage": {
+          "type": "string",
+          "title": "totalStorage"
+        },
+        "instanceId": {
+          "type": "string",
+          "title": "instanceId"
+        },
+        "mem": {
+          "type": "string",
+          "title": "mem"
+        },
+        "id": {
+          "type": "string",
+          "title": "id"
+        },
+        "state": {
+          "type": "string",
+          "title": "state"
+        },
+        "annotation": {
+          "type": "string",
+          "title": "annotation"
+        },
+        "vimId": {
+          "type": "string",
+          "title": "vimId"
+        },
+        "overallCpuUsage": {
+          "type": "string",
+          "title": "overallCpuUsage"
+        },
+        "connectionState": {
+          "type": "string",
+          "title": "connectionState"
+        },
+        "guestMemoryUsage": {
+          "type": "string",
+          "title": "guestMemoryUsage"
+        },
+        "guestHeartbeatStatus": {
+          "type": "object",
+          "title": "guestHeartbeatStatus"
+        },
+        "ipAddress": {
+          "type": "string",
+          "title": "ipAddress"
+        },
+        "cpu": {
+          "type": "string",
+          "title": "cpu"
+        },
+        "productVendor": {
+          "type": "string",
+          "title": "productVendor"
+        },
+        "guestOS": {
+          "type": "string",
+          "title": "guestOS"
+        },
+        "memoryOverhead": {
+          "type": "string",
+          "title": "memoryOverhead"
+        },
+        "isTemplate": {
+          "type": "boolean",
+          "title": "isTemplate"
+        },
+        "sdkId": {
+          "type": "string",
+          "title": "sdkId"
+        },
+        "name": {
+          "type": "string",
+          "title": "name"
+        },
+        "committedStorage": {
+          "type": "string",
+          "title": "committedStorage"
+        },
+        "vmToolsVersionStatus": {
+          "type": "string",
+          "title": "vmToolsVersionStatus"
+        },
+        "vmVersion": {
+          "type": "string",
+          "title": "vmVersion"
+        },
+        "alarmActionsEnabled": {
+          "type": "boolean",
+          "title": "alarmActionsEnabled"
+        },
+        "overallStatus": {
+          "type": "object",
+          "title": "overallStatus"
+        }
+      },
+      "computed": True
+    }
   },
-    "required": ["vm"]
-}      
+  "required": []
+}    
+
 createOrUpdateVroBasedCustomResource(projectId=projectId, WorkflowId=WorkflowId, DeleteWorkflowId=DeleteWorkflowId, propertySchema=properties, vroID=vroID)
 
 
