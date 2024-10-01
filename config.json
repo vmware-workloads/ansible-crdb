@@ -1,0 +1,12 @@
+{
+  "aria_base_url": "https://wdc-vrava.vcf01.isvlab.vmware.com",
+  "workflow_name": "automated_ptp",
+  "delete_workflow_name": "automated_delete_ptp",
+  "vro_cr_name": "ptp_cr",
+  "vro_cr_type_name": "Custom.auto_ptp",
+  "aria_username": "dharmesh.bhatt",
+  "aria_password": "6Bb7Dv}8FB$/O1&9?{62",
+  "project_name": "My Demo Project",
+  "skip_certificate_check": "True",
+  "ansible_root_ca": "XXXXXXX"
+}
