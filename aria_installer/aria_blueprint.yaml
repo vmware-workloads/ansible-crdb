@@ -190,7 +190,7 @@ resources:
       instances: ${resource.crdb-vm[*].id}
       internetFacing: false
   Custom_ptp:
-    type: Custom.ptp3
+    type: Custom.auto_ptp
     allocatePerInstance: true
     properties:
       count: ${input.vm_count}
