@@ -74,90 +74,6 @@ def read_config(configFile):
         config_data = json.load(config_file)
     return config_data
 
-def createOrUpdateContentSource(projectId):
-    """
-        Creates or updates the content source which includes the templates for the given project.
-
-        Args:
-            projectId (str): The ID of the project.
-
-        Returns:
-            str: The ID of the created or updated content source.
-    """
-
-    # Get the list of content sources entitled to the specified project ID
-    url = f'{baseUrl}/catalog/api/admin/sources?search=&size=20&sort=name%2Casc'
-    resp = requests.get(url, headers=headers, verify=False)
-    print(resp.status_code, resp.text)
-    existing = [x for x in resp.json()["content"] if x.get("projectId") == projectId]
-
-    # Configure the content source with the templates and associate it with the specified project ID
-    if len(existing) == 0:
-        # XXX: Code path untested ...
-        url = f'{baseUrl}/catalog/api/admin/sources'
-        body = {
-            "name": "DSM_CONTENT_SOURCE",
-            "typeId": "com.vmw.blueprint",
-            "config": {
-                "sourceProjectId": projectId
-            },
-            "projectId": projectId,
-            "global": True,
-            "iconId": "1495b8d9-9428-30d6-9626-10ff9281645e"
-        }
-        resp = requests.post(url, json=body, headers=headers, verify=False)
-        print(resp.status_code, resp.text)
-        resp.raise_for_status()
-        return resp.json()["id"]
-    else:
-        # Refresh the content source, so the new template is referenced
-        contentSourceId = existing[0]["id"]
-        body = {
-            "id": contentSourceId,
-            "name":"DSM_CONTENT_SOURCE",
-            "typeId":"com.vmw.blueprint",
-            "createdAt":"2023-10-19T10:22:51.000135Z",
-            "createdBy":"configadmin",
-            "lastUpdatedAt":"2023-10-23T02:26:43.062315Z",
-            "lastUpdatedBy":"system-user",
-            "config":{
-                "sourceProjectId":projectId
-            },
-            "itemsImported":1,"itemsFound":1,
-            "lastImportStartedAt":"2023-10-23T02:26:42.880296Z",
-            "lastImportCompletedAt":"2023-10-23T02:26:43.061977Z",
-            "lastImportErrors":[],
-            "projectId":projectId,
-            "global":True,
-            "iconId":"1495b8d9-9428-30d6-9626-10ff9281645e"
-        }
-        url = f'{baseUrl}/catalog/api/admin/sources'
-        resp = requests.post(url, json=body, headers=headers, verify=False)
-        print(resp.status_code, resp.text)
-        resp.raise_for_status()
-        return existing[0]["id"]
-
-def getCatalogItemId(contentSourceId):
-    """
-        Retrieves the ID of the item (content source/template) released to the catalog.
-
-        Args:
-            contentSourceId (str): The content source ID to search for.
-
-        Returns:
-            str: The ID of the catalog item matching the content source ID.
-    """
-    url = f'{baseUrl}/catalog/api/admin/items?search=&page=0&size=20&sort=name%2Casc'
-    resp = requests.get(url, headers=headers, verify=False)
-    print(resp.status_code, resp.text)
-    existing = [x for x in resp.json()["content"] if x["name"] == blueprintName and x["sourceId"] == contentSourceId]
-
-    if len(existing) == 0:
-        raise Exception("Shouldn't happen?")
-    else:
-        return existing[0]["id"]
-
-
 
 def createOrUpdateBlueprint(projectId, blueprint_filename, blueprintDetails):
     """
@@ -280,13 +196,11 @@ def vroCreateWorkflow(workflowFile, WorkflowName):
 def createOrUpdateVroBasedCustomResource(projectId, WorkflowId, DeleteWorkflowId, propertySchema, externalType, vroID):
     """
          Creates or updates the custom resource
-         Uses the same ABX for create/read/update/delete - the ABX needs the logic 
-         to deal with each.
-
 
         Args:
             projectId (str): The ID of the project.
-            abxActionId (str): The ID of the ABX action.
+            WorkflowId (str): The ID of the vro workflow.
+            DeleteWorkflowId (str): The ID of the delete vro workflow.
             propertySchema (dict): Schema of the Custom Resource. 
             externalType (str): Type of SDK object the workdlow returns, e.g. "VC:VirtualMachine"
             vroID: The ID of the vro instance
