@@ -204,7 +204,7 @@ def createOrUpdateBlueprint(projectId, blueprint_filename, blueprintDetails):
 
         # if the version already exists, just update it
         if len(existing_ver) > 0:
-            print("existing blueprint version found, updating...\n\n")
+            print("Existing blueprint version found, updating...\n")
             url = f'{baseUrl}/blueprint/api/blueprints/{blueprintId}?apiVersion=2019-09-12'
             resp = requests.put(url, json=body, headers=headers, verify=False)
             print(resp.status_code, resp.text)
@@ -264,6 +264,8 @@ def vroCreateWorkflow(workflowFile, WorkflowName):
                     return existing[0]['id']
 
     # Create a new Workflow if it doesn't exist yet 
+    print("\nCreating new vRO workflow:",end='')
+    print({workflow["name"]})
     url = f'{baseUrl}/vco/api/workflows'
     resp = requests.post(url, json=workflow, headers=headers, verify=False)
     print(resp.status_code, resp.text)
@@ -341,18 +343,22 @@ def createOrUpdateVroBasedCustomResource(projectId, WorkflowId, DeleteWorkflowId
     existing = [x for x in resp.json()["content"] if x["displayName"] == vroCrName]
     #print(existing)
 
-    # Create the custom resource if it doesn't already exist
+
     if len(existing) > 0:
         # Update the custom resource if it already exists
-        print(f'Found existing custom resource: {vroCrName}\n\n')
+        print(f'Found existing custom resource: {vroCrName}\n')
         body["id"] = existing[0]["id"]
         custom_resource_exists = True
+
+    print(f'Publishing custom resource: {vroCrName}\n')    
+
+    # Send a POST to create/update
     resp = requests.post(url, json=body, headers=headers, verify=False)
     #print(body)
     print(resp.status_code, resp.text)
     resp.raise_for_status()
 
-    # Update the custom resource if it already exists
+    # For day2 actions, run the update again
     if (custom_resource_exists):
         # When tried to re-add the 'additionalActions' to a custom resource, a duplicate key error is raised.
         # Hence, first add the 'mainActions' to a custom resource and only then add any 'additionalActions'
@@ -599,10 +605,8 @@ vroID = getVroEndpointID()
 #print(vroID)
 vroInstanceId=vroID.split('/')[-1]
 
-#print(WorkflowId)
-#print(DeleteWorkflowId)
 
-print("Waiting for sync .", end='')
+print("Waiting for sync.", end='')
 # Start a data collection to sync the embedded vRO workflows, etc.
 startVroDataCollection(vroInstanceId = vroInstanceId)
 
@@ -620,7 +624,7 @@ poll_function(matchVraGatewayWorkflowId,
                timeout=120,
                WorkflowId=DeleteWorkflowId)
 
-print("\nFound Workflows\n")
+print("Found Workflows\n")
 
 # Create/update the custom resource
 # first we define the input/output schema, as per the spec in the vro workflow
@@ -691,8 +695,7 @@ blueprintDetails=getBlueprintName(blueprintFile)
 # Create/update the blueprint/template for the project
 createOrUpdateBlueprint(projectId, blueprintFile, blueprintDetails)
 
-# Create/update the content sharing policy for the project members to access the required content
-#createOrUpdateContentSharingPolicy(projectId, contentSourceId)
+
 
 
 
