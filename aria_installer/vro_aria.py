@@ -6,7 +6,7 @@ urllib3.disable_warnings()
 from datetime import datetime
 import time
 import sys
-import uuid
+import hashlib
 
 
 
@@ -159,7 +159,7 @@ def getCatalogItemId(contentSourceId):
 
 
 
-def createOrUpdateBlueprint(projectId, blueprint_filename):
+def createOrUpdateBlueprint(projectId, blueprint_filename, blueprintDetails):
     """
         Creates or updates the blueprint/template for the given project.
 
@@ -173,8 +173,10 @@ def createOrUpdateBlueprint(projectId, blueprint_filename):
 
 
     print("Update blueprint ...")
+    print(blueprintDetails['name'])
+    print(blueprintDetails['version'])
     body = {
-        "name":blueprintName,
+        "name":blueprintDetails['name'],
         "description":"",
         "valid":True,
         "content": open(blueprint_filename).read(),  # The file to read the blueprint specifications from
@@ -184,14 +186,25 @@ def createOrUpdateBlueprint(projectId, blueprint_filename):
     # Get the list of existing blueprints/templates
     url = f'{baseUrl}/blueprint/api/blueprints?apiVersion=2019-09-12'
     resp = requests.get(url, headers=headers, verify=False)
-    existing = [x for x in resp.json()["content"] if x["name"] == blueprintName]
+    existing = [x for x in resp.json()["content"] if x["name"] == blueprintDetails['name']]
+    existing_ver = ""
+
 
     # Update the blueprint if it already exists
     if len(existing) > 0:
+        # get the versions
         blueprintId = existing[0]['id']
-        url = f'{baseUrl}/blueprint/api/blueprints/{blueprintId}?apiVersion=2019-09-12'
-        resp = requests.put(url, json=body, headers=headers, verify=False)
-        print(resp.status_code, resp.text)
+        url = f'{baseUrl}/blueprint/api/blueprints/{blueprintId}/versions?apiVersion=2019-09-12'
+        resp = requests.get(url, headers=headers, verify=False)
+        existing_ver = [x for x in resp.json()["content"] if x["id"] == blueprintDetails['version']]
+
+        # if the version already exists, just update it
+        if len(existing_ver) > 0:
+            print("existing blueprint version found, updating...")
+            url = f'{baseUrl}/blueprint/api/blueprints/{blueprintId}?apiVersion=2019-09-12'
+            resp = requests.put(url, json=body, headers=headers, verify=False)
+            print(resp.status_code, resp.text)
+            
     else:
         # Create a blueprint with the desired specifications if it doesn't already exist
         url = f'{baseUrl}/blueprint/api/blueprints?apiVersion=2019-09-12'
@@ -199,14 +212,14 @@ def createOrUpdateBlueprint(projectId, blueprint_filename):
         print(resp.status_code, resp.text)
         blueprintId = resp.json()['id']
 
-    # Create a new version every time the blueprint/template gets updated
-    newVersion = datetime.now().strftime("%d-%m-%H-%M-%S")
-    newVersion = f"v{newVersion}"
-    body = {"version": newVersion,"description":"","changeLog":"","release":True}
-    url = f'{baseUrl}/blueprint/api/blueprints/{blueprintId}/versions?apiVersion=2019-09-12'
-    resp = requests.post(url, json=body, headers=headers, verify=False)
-    print(resp.status_code, resp.text)
-    return newVersion
+    if len(existing_ver) == 0:
+        # Create a new version 
+        newVersion = blueprintDetails['version']
+        body = {"version": newVersion,"description":"","changeLog":"","release":True}
+        url = f'{baseUrl}/blueprint/api/blueprints/{blueprintId}/versions?apiVersion=2019-09-12'
+        resp = requests.post(url, json=body, headers=headers, verify=False)
+        print(resp.status_code, resp.text)
+        return newVersion
 
 
 
@@ -258,7 +271,7 @@ def vroCreateWorkflow(workflowFile, WorkflowName):
 
 
 
-def createOrUpdateVroBasedCustomResource(projectId, WorkflowId, DeleteWorkflowId, propertySchema, vroID):
+def createOrUpdateVroBasedCustomResource(projectId, WorkflowId, DeleteWorkflowId, propertySchema, externalType, vroID):
     """
          Creates or updates the custom resource
          Uses the same ABX for create/read/update/delete - the ABX needs the logic 
@@ -269,6 +282,8 @@ def createOrUpdateVroBasedCustomResource(projectId, WorkflowId, DeleteWorkflowId
             projectId (str): The ID of the project.
             abxActionId (str): The ID of the ABX action.
             propertySchema (dict): Schema of the Custom Resource. 
+            externalType (str): Type of SDK object the workdlow returns, e.g. "VC:VirtualMachine"
+            vroID: The ID of the vro instance
 
         Returns:
             None
@@ -277,9 +292,9 @@ def createOrUpdateVroBasedCustomResource(projectId, WorkflowId, DeleteWorkflowId
     custom_resource_exists = False
     # The extensibility action that this custom resource should be associated with
     vroWorkflow = {
-        "id":WorkflowId,
-        "name":WorkflowName,
-        "projectId":projectId,
+        "id": WorkflowId,
+        "name": WorkflowName,
+        "projectId": projectId,
         "type":"vro.workflow",
         "inputParameters": [{"type": "string","name": "vm"}],
         "outputParameters": [{"type": "VC:VirtualMachine","name": "output"}],
@@ -287,9 +302,9 @@ def createOrUpdateVroBasedCustomResource(projectId, WorkflowId, DeleteWorkflowId
     }
 
     vroDeleteWorkflow = {
-        "id":DeleteWorkflowId,
-        "name":DeleteWorkflowName,
-        "projectId":projectId,
+        "id": DeleteWorkflowId,
+        "name": DeleteWorkflowName,
+        "projectId": projectId,
         "type":"vro.workflow",
         "inputParameters": [{"type": "VC:VirtualMachine","name": "vm"}],
         "endpointLink": vroID
@@ -298,10 +313,10 @@ def createOrUpdateVroBasedCustomResource(projectId, WorkflowId, DeleteWorkflowId
 
     # create the body of the request 
     body = {
-        "displayName":vroCrName,
+        "displayName": vroCrName,
         "description":"",
-        "resourceType":vroCrTypeName,
-        "externalType": "VC:VirtualMachine",
+        "resourceType": vroCrTypeName,
+        "externalType": externalType,
         "status":"RELEASED",
         "mainActions": {
           "create": vroWorkflow,
@@ -470,8 +485,13 @@ def getBlueprintName(blueprintFile):
 
     """    
 
-    # Generic response defined if we have issues 
-    generic_response = f'aria_blueprint-{uuid.uuid4()}'
+    # Generic response defined if we have issues - 
+    # Set the blueprint name to the blueprint filename plus a hash
+    blueprintDetails = dict();
+    filehash=hashlib.md5(open(blueprintFile,'rb').read()).hexdigest()
+    blueprintDetails['name'] = f"{blueprintFile.split('.')[0]}_{filehash}"
+    blueprintDetails['version'] = datetime.now().strftime("%d-%m-%H-%M-%S")
+
 
 
     # Ensure we have the values of 'name' and 'version' present
@@ -482,27 +502,21 @@ def getBlueprintName(blueprintFile):
             try:
                 blueprint = yaml.safe_load(stream)
                 try:
-                    name = blueprint['name']
-                    version = blueprint['version']
-
-                    if len(name) > 0:
-                        if len(version) > 0:
-                            formedName = f'{name}_{version}'
-                        else:
-                            formedName = f'{name}-{uuid.uuid4()}'    
-
+                    blueprintDetails['name'] = blueprint['name']
                 except:   
-                    return generic_response 
+                    pass
 
-                if len(formedName) > 0:
-                    return formedName
-                else:
-                    return generic_response
+                try:
+                    blueprintDetails['version'] = blueprint['version']
+                except:
+                    pass  
 
             # If we can't read the file, we just return the generic response
             # incase it's a python or fileread error
             except yaml.YAMLError as exc:
                 print(exc) 
+ 
+        return blueprintDetails
 
 
     # Return nothing if we've been given nothing - i.e. if the filename is blank           
@@ -557,9 +571,10 @@ projectName = config["project_name"]  # Retrieve the project name from the confi
 
 
 # Get the blueprint name+version from the blueprint file
-blueprintName=getBlueprintName(blueprintFile)
+blueprintDetails=getBlueprintName(blueprintFile)
 
-print(blueprintName)
+print(blueprintDetails['name'])
+print(blueprintDetails['version'])
 
 
 
@@ -615,14 +630,8 @@ poll_function(matchVraGatewayWorkflowId,
 print("\n\nFound Workflows\n\n")
 
 # Create/update the custom resource
-"""
-properties = {
-    "properties": {
-        "vm": {"type": "string","title": "vm"},
-        "output": {"type": "object","properties": {"name": {"type": "string","title": "name"}},"computed": True}
-    }
-}
-"""
+# first we define the input/output schema, as per the spec in the vro workflow
+# - needs at least one 'computed' value
 properties = {
   "type": "object",
   "properties": {
@@ -673,12 +682,18 @@ properties = {
   "required": []
 }    
 
-createOrUpdateVroBasedCustomResource(projectId=projectId, WorkflowId=WorkflowId, DeleteWorkflowId=DeleteWorkflowId, propertySchema=properties, vroID=vroID)
+externalType="VC:VirtualMachine"
+
+createOrUpdateVroBasedCustomResource(projectId=projectId, 
+                                    WorkflowId=WorkflowId, 
+                                    DeleteWorkflowId=DeleteWorkflowId, 
+                                    propertySchema=properties,
+                                    externalType=externalType, 
+                                    vroID=vroID)
 
 
 # Create/update the blueprint/template for the project
-#blueprintVersion = createOrUpdateBlueprint(projectId)
-
+createOrUpdateBlueprint(projectId, blueprintFile, blueprintDetails)
 
 # Create/update the content sharing policy for the project members to access the required content
 #createOrUpdateContentSharingPolicy(projectId, contentSourceId)
