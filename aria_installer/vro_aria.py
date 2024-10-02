@@ -171,10 +171,14 @@ def createOrUpdateBlueprint(projectId, blueprint_filename, blueprintDetails):
             str: The new version of the blueprint.
     """
 
-
-    print("Update blueprint ...")
+    print("\nblueprint details:")
+    print('name: ',end='')
     print(blueprintDetails['name'])
+    print('version: ',end='')
     print(blueprintDetails['version'])
+    print("\n")
+
+
     body = {
         "name":blueprintDetails['name'],
         "description":"",
@@ -200,7 +204,7 @@ def createOrUpdateBlueprint(projectId, blueprint_filename, blueprintDetails):
 
         # if the version already exists, just update it
         if len(existing_ver) > 0:
-            print("existing blueprint version found, updating...")
+            print("existing blueprint version found, updating...\n\n")
             url = f'{baseUrl}/blueprint/api/blueprints/{blueprintId}?apiVersion=2019-09-12'
             resp = requests.put(url, json=body, headers=headers, verify=False)
             print(resp.status_code, resp.text)
@@ -561,23 +565,12 @@ def poll_function(func, target_value, sleepTime, timeout=None, *args, **kwargs):
 config = read_config(configFile)
 
 
-#blueprintName = config["blue_print_name"]  # Name of the blueprint
 WorkflowName = config["workflow_name"]  # Name of the vRO Workflow
 DeleteWorkflowName = config["delete_workflow_name"]  # Name of the delete vRO Workflow
 vroCrName = config["vro_cr_name"]  # Name of the Custom Resource
 vroCrTypeName = config["vro_cr_type_name"]  # Name of the Custom Resource Type
 baseUrl = config["aria_base_url"]  # Base URL of Aria deployment
 projectName = config["project_name"]  # Retrieve the project name from the config
-
-
-# Get the blueprint name+version from the blueprint file
-blueprintDetails=getBlueprintName(blueprintFile)
-
-print(blueprintDetails['name'])
-print(blueprintDetails['version'])
-
-
-
 
 # Get the authentication token from the VCF Automation (vRA) API
 token_url = config["aria_base_url"]+"/csp/gateway/am/api/login?access_token=null"
@@ -627,7 +620,7 @@ poll_function(matchVraGatewayWorkflowId,
                timeout=120,
                WorkflowId=DeleteWorkflowId)
 
-print("\n\nFound Workflows\n\n")
+print("\nFound Workflows\n")
 
 # Create/update the custom resource
 # first we define the input/output schema, as per the spec in the vro workflow
@@ -691,6 +684,9 @@ createOrUpdateVroBasedCustomResource(projectId=projectId,
                                     externalType=externalType, 
                                     vroID=vroID)
 
+
+# Get the blueprint name+version from the blueprint file
+blueprintDetails=getBlueprintName(blueprintFile)
 
 # Create/update the blueprint/template for the project
 createOrUpdateBlueprint(projectId, blueprintFile, blueprintDetails)
