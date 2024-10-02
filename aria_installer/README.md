@@ -16,7 +16,7 @@ Open the file 'config.json', and enter the appropriate values for the following 
 The other config.json parameters are optional and can be left as is or modified as per your requirements.
 
 
-Post entering the appropriate values for the above-mentioned parameters, save changes made to the file 'config.json' and run the python script called 'aria.py':
+Post entering the appropriate values for the above-mentioned parameters, save changes made to the file 'config.json' and run the python script called 'vro_aria.py':
 ```bash
 python3 vro_aria.py
 ```
