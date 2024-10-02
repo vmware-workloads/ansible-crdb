@@ -1,5 +1,5 @@
-name: crdb
-version: 1.0.0
+name: crdb_dev_auto
+version: 1.2
 formatVersion: 2
 variables:
   ports:
@@ -111,9 +111,9 @@ resources:
       imageRef: ${input.vmImage}
       flavor: ${input.vmSize}
       remoteAccess:
-        authentication: publicPrivateKey
-        sshKey: ${secret.jumphost-public-key-2}
+        authentication: usernamePassword
         username: ${input.vmUsername}
+        password: ${input.vmPassword}
       cloudConfigSettings:
         deploymentFailOnCloudConfigRuntimeError: true
       cloudConfig: |
