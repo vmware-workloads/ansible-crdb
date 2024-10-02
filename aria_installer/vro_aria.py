@@ -6,16 +6,20 @@ urllib3.disable_warnings()
 from datetime import datetime
 import time
 import sys
+import uuid
 
 
 
 sourceId = "" 
 contentSourceId = ""
 
-configFile = f'config.json' # Name of the configuration file
 
+# Files
+
+configFile = f'config.json' # Name of the configuration file
 vroWorkflowFile=f'vro_workflow.json'
 vroDeleteWorkflowFile=f'vro_delete_workflow.json'
+blueprintFile=f'aria_blueprint.yaml'
 
 
 
@@ -155,22 +159,18 @@ def getCatalogItemId(contentSourceId):
 
 
 
-def createOrUpdateBlueprint(projectId):
+def createOrUpdateBlueprint(projectId, blueprint_filename):
     """
         Creates or updates the blueprint/template for the given project.
 
         Args:
             projectId (str): The ID of the project.
+            blueprint_filename (str): Name of the blueprint file
 
         Returns:
             str: The new version of the blueprint.
     """
 
-    # Enable the enhanced cloud template/blueprint if the user specifies the command line option 'enable-blueprint-version-2'
-    if len(sys.argv) > 1 and sys.argv[1] == "enable-blueprint-version-2":
-        blueprint_filename = "blueprint_version_2.yaml"
-    else:
-        blueprint_filename = "blueprint_version_1.yaml"
 
     print("Update blueprint ...")
     body = {
@@ -180,7 +180,6 @@ def createOrUpdateBlueprint(projectId):
         "content": open(blueprint_filename).read(),  # The file to read the blueprint specifications from
         "projectId": projectId,
         "requestScopeOrg":True}
-    blueprintId = "76b311db-0d78-4d18-93c8-9ea6d2d86f7d"
 
     # Get the list of existing blueprints/templates
     url = f'{baseUrl}/blueprint/api/blueprints?apiVersion=2019-09-12'
@@ -200,7 +199,7 @@ def createOrUpdateBlueprint(projectId):
         print(resp.status_code, resp.text)
         blueprintId = resp.json()['id']
 
-    # Create a new version everytime the blueprint/template gets updated
+    # Create a new version every time the blueprint/template gets updated
     newVersion = datetime.now().strftime("%d-%m-%H-%M-%S")
     newVersion = f"v{newVersion}"
     body = {"version": newVersion,"description":"","changeLog":"","release":True}
@@ -458,8 +457,74 @@ def startVroDataCollection(vroInstanceId):
     resp.raise_for_status()
 
 
+def getBlueprintName(blueprintFile):
+    """
+        Reads the metadata from the blueprint yaml to get the name & version
+        -- assuming this info is present 
+
+        Args:
+            blueprintFile (str): name of the aria blueprint file
+
+        Returns:
+            str: The name and version as per the blueprint OR a generic response
+
+    """    
+
+    # Generic response defined if we have issues 
+    generic_response = f'aria_blueprint-{uuid.uuid4()}'
+
+
+    # Ensure we have the values of 'name' and 'version' present
+    # Otherwise add a uuid or give a generic response as needed
+
+    if len(blueprintFile) > 0: 
+        with open(blueprintFile) as stream:
+            try:
+                blueprint = yaml.safe_load(stream)
+                try:
+                    name = blueprint['name']
+                    version = blueprint['version']
+
+                    if len(name) > 0:
+                        if len(version) > 0:
+                            formedName = f'{name}_{version}'
+                        else:
+                            formedName = f'{name}-{uuid.uuid4()}'    
+
+                except:   
+                    return generic_response 
+
+                if len(formedName) > 0:
+                    return formedName
+                else:
+                    return generic_response
+
+            # If we can't read the file, we just return the generic response
+            # incase it's a python or fileread error
+            except yaml.YAMLError as exc:
+                print(exc) 
+
+
+    # Return nothing if we've been given nothing - i.e. if the filename is blank           
+    else:
+        return None               
+
+
 
 def poll_function(func, target_value, sleepTime, timeout=None, *args, **kwargs):
+    """
+        Simple poll function to try a command and wait a given time/timeout 
+        until the function returns what's expected
+
+        Args:
+            func (str): name of the function to call
+            target_value (str): eventual output expected from function
+            sleepTime (int): how many seconds to wait between tries
+            timeout (int): time in seconds to give up
+
+        Returns:
+            none
+    """
     
     start_time = time.time()
     
@@ -489,6 +554,15 @@ vroCrName = config["vro_cr_name"]  # Name of the Custom Resource
 vroCrTypeName = config["vro_cr_type_name"]  # Name of the Custom Resource Type
 baseUrl = config["aria_base_url"]  # Base URL of Aria deployment
 projectName = config["project_name"]  # Retrieve the project name from the config
+
+
+# Get the blueprint name+version from the blueprint file
+blueprintName=getBlueprintName(blueprintFile)
+
+print(blueprintName)
+
+
+
 
 # Get the authentication token from the VCF Automation (vRA) API
 token_url = config["aria_base_url"]+"/csp/gateway/am/api/login?access_token=null"
@@ -605,10 +679,6 @@ createOrUpdateVroBasedCustomResource(projectId=projectId, WorkflowId=WorkflowId,
 # Create/update the blueprint/template for the project
 #blueprintVersion = createOrUpdateBlueprint(projectId)
 
-
-
-# Create/update the custom form for users to enter the database specifications
-#createOrUpdateDbCrudCustomForm(sourceId, blueprintName)
 
 # Create/update the content sharing policy for the project members to access the required content
 #createOrUpdateContentSharingPolicy(projectId, contentSourceId)
