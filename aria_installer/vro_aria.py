@@ -631,7 +631,8 @@ def poll_function(func, target_value, sleepTime, timeout=None, *args, **kwargs):
     start_time = time.time()
     
     while True:
-        print('.', end='')  
+        sys.stdout.write(str('.')+' ')
+        sys.stdout.flush()
         result = func(*args, **kwargs)
         #print(f'matching {result} with {target_value}')
         
@@ -757,6 +758,7 @@ properties = {
   "required": []
 }    
 
+# Set the returned SDK object to be a VM
 externalType="VC:VirtualMachine"
 
 createOrUpdateVroBasedCustomResource(projectId=projectId, 
@@ -781,8 +783,9 @@ createOrUpdateBlueprint(projectId, blueprintFile, blueprintDetails)
 contentSourceId = createOrUpdateContentSource(projectId, contentName=f'{projectName}_source')
 
 
-print("\n\nCreating content source with ID: ",end='')
-print(contentSourceId)
+print("\n\n")
+print(f'Refreshing content source with ID: {contentSourceId}',end='')
+
 
 # Get ID of the item (content source) released to the catalog
 poll_function(getCatalogItemSourceId, 
