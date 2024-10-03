@@ -153,13 +153,38 @@ def createOrUpdateContentSource(projectId, contentName):
     """
 
     # Get the list of content sources entitled to the specified project ID
-    url = f'{baseUrl}/catalog/api/admin/sources?search=&size=20&sort=name%2Casc'
+    url = f'{baseUrl}/catalog/api/admin/sources?search=&size=9999'
     resp = requests.get(url, headers=headers, verify=False)
     #print(resp.status_code, resp.text)
-    existing = [x for x in resp.json()["content"] if x.get("projectId") == projectId]
+    #existing = [x for x in resp.json()["content"] if x.get("projectId") == projectId]
 
-    # Configure the content source with the templates and associate it with the specified project ID
-    if len(existing) == 0:
+    # Parse the JSON data
+    parsed_data = resp.json()
+
+    filtered_names = [item['name'] for item in parsed_data['content'] if 'projectId' in item]
+    if contentName in filtered_names:
+        print("\n")
+        print(f'Found existing content Name: {contentName} in project {projectId}')
+        print("\n")
+
+        # Refresh the content source, so the new template is referenced
+        contentSourceId = parsed_data["content"][0]["id"]
+        body = {
+            "id": contentSourceId,
+            "name": contentName,
+            "typeId":"com.vmw.blueprint",
+            "config":{"sourceProjectId":projectId},
+            "projectId":projectId,
+            "global":True,
+        }
+
+        url = f'{baseUrl}/catalog/api/admin/sources'
+        resp = requests.post(url, json=body, headers=headers, verify=False)
+        print(resp.status_code, resp.text)
+        resp.raise_for_status()
+        return parsed_data["content"][0]["id"]
+    else:
+        print(f'Creating new content {contentName} for project {projectId}')    
         url = f'{baseUrl}/catalog/api/admin/sources'
         body = {
             "name": contentName,
@@ -169,25 +194,13 @@ def createOrUpdateContentSource(projectId, contentName):
             "global": True,
         }
         resp = requests.post(url, json=body, headers=headers, verify=False)
-        #print(resp.status_code, resp.text)
+        print(resp.status_code, resp.text)
         resp.raise_for_status()
         return resp.json()["id"]
-    else:
-        # Refresh the content source, so the new template is referenced
-        contentSourceId = existing[0]["id"]
-        body = {
-            "id": contentSourceId,
-            "name": contentName,
-            "typeId":"com.vmw.blueprint",
-            "config":{"sourceProjectId":projectId},
-            "projectId":projectId,
-            "global":True,
-        }
-        url = f'{baseUrl}/catalog/api/admin/sources'
-        resp = requests.post(url, json=body, headers=headers, verify=False)
-        #print(resp.status_code, resp.text)
-        resp.raise_for_status()
-        return existing[0]["id"]
+
+
+
+
 
 def createOrUpdateContentSharingPolicy(projectId, contentSourceId, policyName):
     """
@@ -236,7 +249,6 @@ def createOrUpdateContentSharingPolicy(projectId, contentSourceId, policyName):
     filtered_names = [item['name'] for item in parsed_data['content'] if 'projectId' in item]
     if policyName in filtered_names:
         print(f'Found existing policyName: {policyName} in project {projectId}')
-        print(parsed_data['content'][0]['id'])
         return parsed_data['content'][0]['id']
     else:
         print(f'Creating new policy {policyName} for project {projectId}')    
@@ -282,7 +294,7 @@ def getCatalogItemSourceId(blueprintName):
     """
 
 
-    url = f'{baseUrl}/catalog/api/admin/items?search=&page=0&size=9999&sort=name%2Casc'
+    url = f'{baseUrl}/catalog/api/admin/items?search=&page=0&size=9999'
     resp = requests.get(url, headers=headers, verify=False)
     #print(resp.status_code, resp.text)
     existing = [x for x in resp.json()["content"] if x["name"] == blueprintName]
@@ -770,7 +782,7 @@ createOrUpdateBlueprint(projectId, blueprintFile, blueprintDetails)
 contentSourceId = createOrUpdateContentSource(projectId, contentName=f'{projectName}_source')
 
 
-print("\n\nCreating content source with ID:",end='')
+print("\n\nCreating content source with ID: ",end='')
 print(contentSourceId)
 
 # Get ID of the item (content source) released to the catalog
