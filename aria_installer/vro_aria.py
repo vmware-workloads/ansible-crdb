@@ -156,7 +156,6 @@ def createOrUpdateContentSource(projectId, contentName):
     url = f'{baseUrl}/catalog/api/admin/sources?search=&size=9999'
     resp = requests.get(url, headers=headers, verify=False)
     #print(resp.status_code, resp.text)
-    #existing = [x for x in resp.json()["content"] if x.get("projectId") == projectId]
 
     # Parse the JSON data
     parsed_data = resp.json()
