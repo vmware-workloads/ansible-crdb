@@ -141,6 +141,157 @@ def createOrUpdateBlueprint(projectId, blueprint_filename, blueprintDetails):
         print(resp.status_code, resp.text)
         return newVersion
 
+def createOrUpdateContentSource(projectId, contentName):
+    """
+        Creates or updates the content source which includes the templates for the given project.
+
+        Args:
+            projectId (str): The ID of the project.
+
+        Returns:
+            str: The ID of the created or updated content source.
+    """
+
+    # Get the list of content sources entitled to the specified project ID
+    url = f'{baseUrl}/catalog/api/admin/sources?search=&size=20&sort=name%2Casc'
+    resp = requests.get(url, headers=headers, verify=False)
+    #print(resp.status_code, resp.text)
+    existing = [x for x in resp.json()["content"] if x.get("projectId") == projectId]
+
+    # Configure the content source with the templates and associate it with the specified project ID
+    if len(existing) == 0:
+        url = f'{baseUrl}/catalog/api/admin/sources'
+        body = {
+            "name": contentName,
+            "typeId": "com.vmw.blueprint",
+            "config": {"sourceProjectId": projectId},
+            "projectId": projectId,
+            "global": True,
+        }
+        resp = requests.post(url, json=body, headers=headers, verify=False)
+        #print(resp.status_code, resp.text)
+        resp.raise_for_status()
+        return resp.json()["id"]
+    else:
+        # Refresh the content source, so the new template is referenced
+        contentSourceId = existing[0]["id"]
+        body = {
+            "id": contentSourceId,
+            "name": contentName,
+            "typeId":"com.vmw.blueprint",
+            "config":{"sourceProjectId":projectId},
+            "projectId":projectId,
+            "global":True,
+        }
+        url = f'{baseUrl}/catalog/api/admin/sources'
+        resp = requests.post(url, json=body, headers=headers, verify=False)
+        #print(resp.status_code, resp.text)
+        resp.raise_for_status()
+        return existing[0]["id"]
+
+def createOrUpdateContentSharingPolicy(projectId, contentSourceId, policyName):
+    """
+        Creates or updates the content sharing policy for the project members to access the templates imported with the content source
+
+        Args:
+            projectId (str): The ID of the project.
+            contentSourceId (str): The ID of the content source.
+
+        Returns:
+            str: The ID of the created or updated policy.
+    """
+
+
+
+    # Define the body of the policy
+    body = {
+        "typeId": "com.vmware.policy.catalog.entitlement",
+        "definition": {
+            "entitledUsers": [
+            {
+                "userType": "USER",
+                "principals": [{"type": "PROJECT","referenceId": ""}],
+                "items": [{"id": contentSourceId,"type": "CATALOG_SOURCE_IDENTIFIER"}]
+            }
+            ]
+        },
+        "enforcementType": "HARD",
+        "name": policyName,
+        "projectId": projectId
+    }
+
+    #print(body)
+
+    url = f'{baseUrl}/policy/api/policies?page=0&size=9999'
+    resp = requests.get(url, headers=headers, verify=False)
+    #print(resp.status_code, resp.text)
+    resp.raise_for_status()
+
+
+    # Parse the JSON data
+    parsed_data = resp.json()
+
+
+    # Extract and filter content items that have a projectId
+    filtered_names = [item['name'] for item in parsed_data['content'] if 'projectId' in item]
+    if policyName in filtered_names:
+        print(f'Found existing policyName: {policyName} in project {projectId}')
+        print(parsed_data['content'][0]['id'])
+        return parsed_data['content'][0]['id']
+    else:
+        print(f'Creating new policy {policyName} for project {projectId}')    
+        url = f'{baseUrl}/policy/api/policies'
+        resp = requests.post(url, json=body, headers=headers, verify=False)
+        resp.raise_for_status()
+        return resp.json()["id"]
+      
+
+def getCatalogItemId(blueprintName, contentSourceId):
+    """
+        Retrieves the ID of the item (content source/template) released to the catalog.
+
+        Args:
+            blueprintName (str): Name of the blueprint to search for.
+            contentSourceId (str): The content source ID to search for.
+
+        Returns:
+            str or None: The ID of the catalog item matching the content source ID.
+    """
+  
+
+    url = f'{baseUrl}/catalog/api/admin/items?search=&page=0&size=9999&sort=name%2Casc'
+    resp = requests.get(url, headers=headers, verify=False)
+    #print(resp.status_code, resp.text)
+    existing = [x for x in resp.json()["content"] if x["name"] == blueprintName and x["sourceId"] == contentSourceId]
+
+    if len(existing) == 0:
+        return None
+    else:
+        return existing[0]["id"]
+
+
+def getCatalogItemSourceId(blueprintName):
+    """
+        Retrieves the source ID of the item (content source/template) released to the catalog.
+
+        Args:
+            contentSourceId (str): The content source ID to search for.
+
+        Returns:
+            str or None: The ID of the catalog item matching the content source ID.
+    """
+
+
+    url = f'{baseUrl}/catalog/api/admin/items?search=&page=0&size=9999&sort=name%2Casc'
+    resp = requests.get(url, headers=headers, verify=False)
+    #print(resp.status_code, resp.text)
+    existing = [x for x in resp.json()["content"] if x["name"] == blueprintName]
+
+    if len(existing) == 0:
+        return None
+    else:
+        return existing[0]["sourceId"]
+
 
 
 
@@ -396,7 +547,7 @@ def startVroDataCollection(vroInstanceId):
     resp.raise_for_status()
 
 
-def getBlueprintName(blueprintFile):
+def getBlueprintDetails(blueprintFile):
     """
         Reads the metadata from the blueprint yaml to get the name & version
         -- assuming this info is present 
@@ -433,7 +584,8 @@ def getBlueprintName(blueprintFile):
                 try:
                     blueprintDetails['version'] = blueprint['version']
                 except:
-                    pass  
+                    pass
+      
 
             # If we can't read the file, we just return the generic response
             # incase it's a python or fileread error
@@ -459,6 +611,7 @@ def poll_function(func, target_value, sleepTime, timeout=None, *args, **kwargs):
             target_value (str): eventual output expected from function
             sleepTime (int): how many seconds to wait between tries
             timeout (int): time in seconds to give up
+            args / kwargs: arguments given to the function
 
         Returns:
             none
@@ -604,12 +757,35 @@ createOrUpdateVroBasedCustomResource(projectId=projectId,
 
 
 # Get the blueprint name+version from the blueprint file
-blueprintDetails=getBlueprintName(blueprintFile)
+blueprintDetails=getBlueprintDetails(blueprintFile)
+
+blueprintName = blueprintDetails['name']
 
 # Create/update the blueprint/template for the project
 createOrUpdateBlueprint(projectId, blueprintFile, blueprintDetails)
 
 
 
+# Create/update the content source which includes the templates, users, secrets etc. for the project
+contentSourceId = createOrUpdateContentSource(projectId, contentName=f'{projectName}_source')
 
+
+print("\n\nCreating content source with ID:",end='')
+print(contentSourceId)
+
+# Get ID of the item (content source) released to the catalog
+poll_function(getCatalogItemSourceId, 
+               target_value=contentSourceId, 
+               sleepTime=5, 
+               timeout=120,
+               blueprintName=blueprintName)
+
+print("done\n")
+
+# Create/update the content sharing policy for the project members to access the required content
+print(f'Creating content policy: Content-policy_{projectName}')
+print("\n")
+createOrUpdateContentSharingPolicy(projectId, contentSourceId, policyName=f'Content-Policy_{projectName}')
+
+print("\nAll done.")
 
