@@ -141,18 +141,20 @@ function Create-OrUpdateAbxAction {
 
     # Get the list of existing ABX actions
     $url = "$baseUrl/abx/api/resources/actions"
-    $response = Invoke-RestMethod -Uri $url -Headers $headers -Method Get -SkipCertificateCheck
+    $response = Invoke-RestMethod -Uri $url -Headers $headers -Method Get 
 
     $existing = $response.content | Where-Object { $_.name -eq $abxActionName }
     
     $secretIdTable = $secretId | ForEach-Object { $_ = "" } 
+    
+    $myScriptSource = Get-Content -Raw -Path $abxScript | out-string
 
     # Prepare the body for the request
     $body = @{
         name                    = $abxActionName
         metadata                = @{}
         runtime                 = "python"
-        source                  = Get-Content -Path $abxScript -Raw
+        source                  = $myScriptSource 
         entrypoint              = "handler"
         inputs                  = $secretIdTable
         cpuShares               = 1024
@@ -170,18 +172,21 @@ function Create-OrUpdateAbxAction {
         scriptSource            = 0
         provider                = ""
     }
+    
+    #$myjson = $body | ConvertTo-Json
+    #write-host $myjson
 
     # If the action exists, update it
     if ($existing) {
         $abxActionId = $existing[0].id
         $body.id = $abxActionId
         $url = "$baseUrl/abx/api/resources/actions/$abxActionId"
-        $response = Invoke-RestMethod -Uri $url -Headers $headers -Method Put -Body ($body | ConvertTo-Json) -SkipCertificateCheck
+        $response = Invoke-RestMethod -Uri $url -Headers $headers -Method Put -Body ($body | ConvertTo-Json) 
     }
     else {
         # Create a new ABX action if it doesn't exist
         $url = "$baseUrl/abx/api/resources/actions"
-        $response = Invoke-RestMethod -Uri $url -Headers $headers -Method Post -Body ($body | ConvertTo-Json) -SkipCertificateCheck
+        $response = Invoke-RestMethod -Uri $url -Headers $headers -Method Post -Body ($body | ConvertTo-Json) 
         $abxActionId = $response.id
     }
 
@@ -193,7 +198,7 @@ function Create-OrUpdateAbxBasedCustomResource {
     param (
         [string]$projectId,
         [string]$abxActionId,
-        [hashtable]$propertySchema,  # Schema of the Custom Resource
+        [hashtable]$propertySchema,
         [string]$crName,
         [string]$crTypeName,
         [string]$abxActionName,
@@ -230,7 +235,7 @@ function Create-OrUpdateAbxBasedCustomResource {
 
     # Get the list of existing custom resources
     $url = "$baseUrl/form-service/api/custom/resource-types"
-    $response = Invoke-RestMethod -Uri $url -Headers $headers -Method Get -SkipCertificateCheck
+    $response = Invoke-RestMethod -Uri $url -Headers $headers -Method Get 
     $existing = $response.content | Where-Object { $_.displayName -eq $crName }
 
     # Create or update the custom resource
@@ -240,13 +245,16 @@ function Create-OrUpdateAbxBasedCustomResource {
         $custom_resource_exists = $true
     }
 
+    $jsonBody = $body | ConvertTo-Json -Depth 100
+    #write-host $jsonBody
+
     # Send the POST request to create or update
-    $response = Invoke-RestMethod -Uri $url -Headers $headers -Method Post -Body ($body | ConvertTo-Json) -SkipCertificateCheck
+    $response = Invoke-RestMethod -Uri $url -Headers $headers -Method Post -Body $jsonBody
 
     if ($custom_resource_exists) {
         # Add additional actions if needed after the main actions are added
         $body.id = $existing[0].id
-        $response = Invoke-RestMethod -Uri $url -Headers $headers -Method Post -Body ($body | ConvertTo-Json) -SkipCertificateCheck
+        $response = Invoke-RestMethod -Uri $url -Headers $headers -Method Post -Body $jsonBody
     }
 }
 
@@ -262,11 +270,13 @@ function Get-Secrets {
     $secrets = @('aapURL', 'aapUser', 'aapPass', 'aapSSL', 'aapRootCA')
 
     # Retrieve secrets from the platform API
-    $url = "$baseUrl/platform/api/secrets?page=0&size=20"
-    $response = Invoke-RestMethod -Uri $url -Headers $headers -Method Get -SkipCertificateCheck
+    $url = "$baseUrl/platform/api/secrets?page=0&size=9999"
+    $response = Invoke-RestMethod -Uri $url -Headers $headers -Method Get 
 
     # Assuming the response is a JSON object containing "content" with an array of secrets
     $secretList = $response.content
+    
+
 
     # Filter the secrets based on name and projectId
     $filteredSecrets = @()
@@ -305,9 +315,13 @@ function Create-Secrets {
         [hashtable]$headers          # Headers (e.g., Authorization)
     )
 
+
+    
     # Loop through each secret in the inputs hashtable
     foreach ($name in $inputs.Keys) {
         $value = $inputs[$name]
+        
+
         
         # Prepare the body for the request
         $body = @{
@@ -315,24 +329,29 @@ function Create-Secrets {
             value     = $value
             projectId = $projectId
         }
+        
 
+        
         # Get the existing secret (filtered by name)
         $url = "$baseUrl/platform/api/secrets?`$filter=name eq '$name'"
-        $response = Invoke-RestMethod -Uri $url -Headers $headers -Method Get -SkipCertificateCheck
+        $response = Invoke-RestMethod -Uri $url -Headers $headers -Method Get 
+        
         
         # Check if the secret already exists
         $existingSecrets = $response.content
         if ($existingSecrets.Count -gt 0) {
             # Update the existing secret
+            #write-host "updating existing secrets"
             $id = $existingSecrets[0].id
             $url = "$baseUrl/platform/api/secrets/$id"
-            $response = Invoke-RestMethod -Uri $url -Headers $headers -Method Patch -Body ($body | ConvertTo-Json) -SkipCertificateCheck
+            $response = Invoke-RestMethod -Uri $url -Headers $headers -Method Patch -Body ($body | ConvertTo-Json) 
             $response | Out-Null  # Optionally suppress output
         }
         else {
             # Create a new secret if it doesn't exist
+            #write-host "creating new secrets"
             $url = "$baseUrl/platform/api/secrets"
-            $response = Invoke-RestMethod -Uri $url -Headers $headers -Method Post -Body ($body | ConvertTo-Json) -SkipCertificateCheck
+            $response = Invoke-RestMethod -Uri $url -Headers $headers -Method Post -Body ($body | ConvertTo-Json) 
             $response | Out-Null  # Optionally suppress output
         }
     }
@@ -447,5 +466,6 @@ $properties = @{
         }
     }
     required = @("hosts", "inventory_name", "job_template_name")
-}     
-Create-OrUpdateAbxBasedCustomResource -projectID $projectId -abxActionId $abxActionId -propertySchema $properties -crName -crTypeName -abxActionName $abxActionName -baseUrl $config.aria_base_url -headers $headers
+} 
+
+Create-OrUpdateAbxBasedCustomResource -projectID $projectId -abxActionId $abxActionId -propertySchema $properties -crName $crName -crTypeName $crTypeName -abxActionName $abxActionName -baseUrl $config.aria_base_url -headers $headers
