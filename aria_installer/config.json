@@ -7,4 +7,5 @@
   "vro_cr_name": "ptp_cr",
   "vro_cr_type_name": "Custom.auto_ptp",
   "project_name": "My Project",
+  "skip_certificate_check":  "True"
 }
