@@ -148,12 +148,10 @@ resources:
         - key: App
           value: ${to_string('crdb_' + count.index)}
   prod_net:
-    type: Cloud.Network
+    type: Cloud.NSX.Network
     properties:
       name: ls-prod
-      networkType: public
-      constraints:
-        - tag: segment_name:ls-prod
+      networkType: routed
   web_net:
     type: Cloud.NSX.Network
     properties:
