@@ -76,7 +76,7 @@ inputs:
     default: crdb
 resources:
   Ansible_API:
-    type: Custom.Ansible_API
+    type: Custom.AAP
     dependsOn:
       - Custom_ptp
     properties:
