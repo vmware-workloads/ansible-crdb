@@ -80,4 +80,4 @@
 
 - name: list mounted data disks
   ansible.builtin.debug:
-    var: "{{ crdb_data_disks }}"
+    var: crdb_data_disks
