@@ -134,6 +134,7 @@ resources:
       networks:
         - network: ${resource.web_net.id}
           assignment: static
+          domain: crdb.net          
       storage:
         bootDiskCapacityInGB: ${input.os_diskSize}
   disk:
