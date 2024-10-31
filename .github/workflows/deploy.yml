@@ -38,7 +38,7 @@ jobs:
     - run: echo "🍏 This job's status is ${{ job.status }}."
 
     - name: Creating Aria Blueprint Python Installer
-      run: zip -rj aria_blueprint_installer_python.zip installer/*
+      run: zip -rj aria_blueprint_installer_python.zip aria_installer/*
 
     - name: Create Release
       id: create_release
