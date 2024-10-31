@@ -3,52 +3,84 @@
     gather_subset:
       - hardware
 
-- name: Gather the list of mounted devices
-  ansible.builtin.shell:
-    cmd: >
-      lsblk --list --noheadings --output MOUNTPOINT,NAME 
-      | awk '/^\//{print $2}'
-      | awk '/^sd/{print $1}'
-      | awk '{sub(/[0-9]+/, "", $(NF-1)); print }'
-      | uniq
-  register: mounted_disks
-  changed_when: False
 
-- name: Gather the list of all devices
-  ansible.builtin.shell:
-    cmd: >
-      lsblk --list --noheadings --output NAME
-      | awk '/^sd/{print $1}' 
-      | awk '{sub(/[0-9]+/, "", $(NF-1)); print }'
-      | uniq
-  register: all_disks
-  changed_when: False
+#
+# Use lsblk to query disk devices and output in json to a variable
+#
 
-- name: Calculate the unused devices
+- name: Get block devices without filesystem, mountpoints, or children
+  ansible.builtin.command: lsblk --fs -I8 --json
+  register: lsblk_output
+
+#
+# Filter the lsblk output to find unused devices
+# 
+
+- name: Filter block devices using json_query
   set_fact:
-    unused_disks: "{{ all_disks.stdout_lines | difference(mounted_disks.stdout_lines) }}"
+    unused_disks: "{{ lsblk_output.stdout | from_json | json_query(query) }}"
+  vars:
+    query: "blockdevices[?children==null && fstype==null && mountpoints==[null]].name"
 
-- name: debug
-  ansible.builtin.debug:
-    var: mounted_disks.stdout_lines
-
-- name: debug
-  ansible.builtin.debug:
-    var: all_disks.stdout_lines
-
-- name: debug
-  ansible.builtin.debug:
+- name: Display unformatted devices
+  debug:
     var: unused_disks
+
+#
+# Create a dictionary of disk names, e.g. data0 | sda
+# note that disk_names is an inventory variable that
+# is passed down from vcf automation (aria)
+# 
+
+- name: Create map of disk names to disks
+  set_fact:
+    disk_name_map: "{{ dict(disk_names | zip(unused_disks)) }}"    
+
+- name: Display the map of disk names to disks
+  debug:
+    var: disk_name_map    
+
+
+#
+# Create exacly one partition and name each disk from the vcf automation
+# inputs
+#    
 
 - name: partition disks
   community.general.parted:
-    device: "/dev/{{ item }}"
+    device: "/dev/{{ item.value }}"
     number: 1
     state: present
     label: gpt
-    name: data
+    name: "{{ item.key }}"
     resize: true
-  loop: "{{ unused_disks }}"
+  loop: "{{ disk_name_map | dict2items }}"
+  loop_control:
+    index_var: index
+  register: partition_result
+
+- name: Display partition result
+  debug:
+    var: partition_result  
+
+
+#- name: Filter partitions using json_query
+#  set_fact:
+#    partitioned_disks: "{{ partition_result | json_query(query) }}"
+#  vars:
+#    query: "results[].{dev: disk.dev, num: partitions[].num}"
+  
+
+#- name: Display the formatted partition names
+#  debug:
+#    var: partitioned_disks
+
+
+#
+# Create the filesystem on the found disks from
+# earier. We know we have only one partition so
+# devices resolve to, for instance, /dev/sdb1
+#
 
 - name: create filesystem
   community.general.filesystem:
@@ -56,18 +88,25 @@
     dev: "/dev/{{ item }}1"
   loop: "{{ unused_disks }}"
 
+
+#
+# Mount the new disks, to the same path as the 
+# disk name (as specified in vcf automation)
+#
+
 - name: mount data volumes
   ansible.posix.mount:
-    src: "/dev/{{ item }}1"
-    path: "{{ crdb_folder }}/data{{ index }}"
+    src: "/dev/{{ item.value }}1"
+    path: "{{ crdb_folder }}/{{ item.key }}"
     opts: defaults
     state: mounted
     fstype: "{{ data_filesystem }}"
-  loop: "{{ unused_disks }}"
+  loop: "{{ disk_name_map | dict2items }}"
   loop_control:
     index_var: index
 
 - name: get data volumes
+  ignore_errors: true
   ansible.builtin.shell:
     cmd: >
       lsblk --list --noheadings --output MOUNTPOINT

@@ -10,6 +10,8 @@ This playbook was created for demonstration purposes and should serve as a basis
 
 ```
 ansible-crdb
+│── aria_installer
+│   └── ...
 ├── collections
 │   └── requirements.yml
 ├── roles
@@ -26,6 +28,7 @@ ansible-crdb
 └── README.md
 ```
 
+- `aria_installer/`: installation files for aria automation.
 - `collections/`: directory containing the module requirements for the playbook.
 - `roles/`: directory containing the roles.
 - `deploy.yml`: the playbook file.
