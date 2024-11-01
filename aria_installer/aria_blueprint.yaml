@@ -80,7 +80,7 @@ resources:
     dependsOn:
       - Custom_ptp
     properties:
-      ssl_verify: false
+      aapSSL: false
       verbose: true
       organization_name: Default
       job_template_name: CRDB Template dev
