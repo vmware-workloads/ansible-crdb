@@ -110,6 +110,7 @@ resources:
       count: ${input.vm_count}
       imageRef: ${input.vmImage}
       flavor: ${input.vmSize}
+      name: ${'crdb-' + to_string(count.index)}
       remoteAccess:
         authentication: usernamePassword
         username: ${input.vmUsername}
