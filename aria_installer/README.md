@@ -7,6 +7,8 @@ The automation will then be available in Service Broker.
 ## Prerequisites
 
 -   AAP installed and running
+-   Aria / VCF Automation configured with flavour mappings small/medium/large
+-   NSX Networking available and project setup to be able to create new routable segments
 -   Python 3.10 or higher on the machine where the script will be executed
 -   Aria Automation 8.16 or higher
 -   vRO connected to vCenter (as per https://docs.vmware.com/en/VMware-Aria-Automation/8.18/Using-Automation-Orchestrator-Plugins/GUID-C2EC619C-EAB0-43BB-98E4-7E54C6AA4CFD.html)
