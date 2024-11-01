@@ -8,6 +8,7 @@ The automation will then be available in Service Broker.
 
 -   AAP installed and running
 -   Aria / VCF Automation configured with flavour mappings small/medium/large
+-   Project added to ansible, crediental added with username/password and a template name of 'Cockroach DB Template'
 -   NSX Networking available and project setup to be able to create new routable segments
 -   Python 3.10 or higher on the machine where the script will be executed
 -   Aria Automation 8.16 or higher
