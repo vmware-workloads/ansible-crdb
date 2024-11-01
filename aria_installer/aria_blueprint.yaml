@@ -83,7 +83,7 @@ resources:
       aapSSL: false
       verbose: true
       organization_name: Default
-      job_template_name: CRDB Template dev
+      job_template_name: Cockroach DB Template
       inventory_name: ${env.blueprintName}-${env.deploymentId}
       inventory_variables:
         use_ssl: true
