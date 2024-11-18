@@ -379,7 +379,7 @@ def createOrUpdateVroBasedCustomResource(projectId, WorkflowId, DeleteWorkflowId
         "projectId": projectId,
         "type":"vro.workflow",
         "inputParameters": [{"type": "string","name": "vm"}],
-        "outputParameters": [{"type": "VC:VirtualMachine","name": "output"}],
+        "outputParameters": [{"type": externalType,"name": "output"}],
         "endpointLink": vroID
     }
 
@@ -388,7 +388,7 @@ def createOrUpdateVroBasedCustomResource(projectId, WorkflowId, DeleteWorkflowId
         "name": DeleteWorkflowName,
         "projectId": projectId,
         "type":"vro.workflow",
-        "inputParameters": [{"type": "VC:VirtualMachine","name": "vm"}],
+        "inputParameters": [{"type": externalType,"name": "vm"}],
         "endpointLink": vroID
     }    
 
@@ -400,6 +400,7 @@ def createOrUpdateVroBasedCustomResource(projectId, WorkflowId, DeleteWorkflowId
         "resourceType": vroCrTypeName,
         "externalType": externalType,
         "status":"RELEASED",
+        "projectId": projectId,        
         "mainActions": {
           "create": vroWorkflow,
           "delete":  vroDeleteWorkflow,
