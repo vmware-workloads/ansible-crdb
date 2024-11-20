@@ -7,7 +7,7 @@ The automation will then be available in Service Broker.
 ## Prerequisites
 
 -   AAP installed and running
--   Aria / VCF Automation configured with flavour mappings small/medium/large
+-   Aria / VCF Automation configured with VM flavour mappings for small/medium/large
 -   Note: pulls Ubuntu images from the web. If required, alter the template to use a local image (image mapping in VCF Automation required)
 -   Project added to ansible, crediental added with username/password and a template name of 'Cockroach DB Template'
 -   NSX Networking available and project setup to be able to create new routable segments
