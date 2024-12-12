@@ -125,12 +125,9 @@ resources:
           - name: ${input.vmUsername}
             shell: /bin/bash
             sudo: ALL=(ALL) NOPASSWD:ALL 
-        ssh_pwauth: true
         runcmd:
           - netplan apply
-        ssh_pwauth: true
-        runcmd:
-          - netplan apply      
+        ssh_pwauth: true    
       attachedDisks: ${map_to_object(slice(resource.disk[*].id, length(input.diskConfig) * count.index, length(input.diskConfig) * (count.index + 1)), "source")}
       networks:
         - network: ${resource.web_net.id}
